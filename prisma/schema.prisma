@@ -1,0 +1,231 @@
+// A Tranquil Space — database schema
+//
+// Includes Auth.js v5 required models (User, Account, Session, VerificationToken)
+// plus the application data model (notes, citations, related notes, chat threads,
+// daily reflections, audit log).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// Auth.js v5 required models
+// =====================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+
+  // App-specific
+  role                       String    @default("owner") // owner | heirloom
+  heirloomContactEmail       String?
+  heirloomUnlockAfterDays    Int       @default(365)
+  fontScale                  Float     @default(1.0)
+  contrast                   String    @default("standard") // standard | high
+  reducedMotion              Boolean   @default(false)
+  ambientSound               String?
+  lastSeenAt                 DateTime?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  accounts           Account[]
+  sessions           Session[]
+  notes              Note[]
+  chatThreads        ChatThread[]
+  dailyReflections   DailyReflection[]
+  auditEntries       AuditLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// =====================================================
+// Application data
+// =====================================================
+
+enum NoteSource {
+  text
+  voice
+  imported
+}
+
+enum NoteStatus {
+  draft
+  saved
+  archived
+  published
+}
+
+enum CitationKind {
+  quran
+  hadith
+  tafsir
+}
+
+model Note {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title     String?
+  bodyMd    String     @default("")
+  source    NoteSource @default(text)
+  status    NoteStatus @default(draft)
+
+  // AI-derived
+  collectionDocId String? // id within the user's Grok Collection
+  aiTags          String[] @default([])
+  aiSummary       String?
+  aiTopic         String?
+
+  // Publishing
+  publishedSlug      String?  @unique
+  isHeirloomVisible  Boolean  @default(true)
+
+  audio          NoteAudio?
+  citations      NoteCitation[]
+  relatedFrom    RelatedNote[] @relation("from")
+  relatedTo      RelatedNote[] @relation("to")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([userId, updatedAt])
+  @@index([userId, aiTopic])
+}
+
+model NoteAudio {
+  id                  String  @id @default(cuid())
+  noteId              String  @unique
+  note                Note    @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  r2Key               String
+  durationSec         Int?
+  transcriptSegments  Json?   // [{ start, end, text }]
+  language            String  @default("en")
+  createdAt           DateTime @default(now())
+}
+
+model NoteCitation {
+  id          String       @id @default(cuid())
+  noteId      String
+  note        Note         @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  position    Int          // byte offset / block index in the note body
+  kind        CitationKind
+  reference   String       // "2:255" or "bukhari:1:1:1"
+  arabic      String?
+  translation String?
+  translator  String?
+  grade       String?      // sahih | hasan | daif (hadith only)
+
+  createdAt   DateTime @default(now())
+
+  @@index([noteId, position])
+}
+
+model RelatedNote {
+  noteId        String
+  relatedNoteId String
+  similarity    Float
+
+  note    Note @relation("from", fields: [noteId], references: [id], onDelete: Cascade)
+  related Note @relation("to",   fields: [relatedNoteId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([noteId, relatedNoteId])
+  @@index([relatedNoteId])
+}
+
+model ChatThread {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  messages  ChatMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model ChatMessage {
+  id         String     @id @default(cuid())
+  threadId   String
+  thread     ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  role       String     // user | assistant | tool
+  content    String     @db.Text
+  toolCalls  Json?
+  citations  Json?
+
+  createdAt  DateTime   @default(now())
+
+  @@index([threadId, createdAt])
+}
+
+model DailyReflection {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          DateTime @db.Date
+  prompt        String
+  responseNoteId String?
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  targetId  String?
+  meta      Json?
+  at        DateTime @default(now())
+
+  @@index([userId, at])
+}
