@@ -11,11 +11,21 @@ This document captures the finalized architecture and week-by-week plan. Operati
 
 Phase 1 scaffold was **merged into this repo from `Downloads/files-2`** (flat files placed under `src/`, routed pages merged from nested `tranquil-space/` paths; **`mnt/`** tooling paths were discarded). **`npm install`** → **`npm run build`** validates the tree.
 
+**Phase 2+ drop (`Downloads/files-3`):** BullMQ worker (**`worker/`** + **`src/lib/queue.ts`**), R2 presign/fetch (**`src/lib/r2.ts`**), xAI REST helpers (**`src/lib/{xai,stt,collections,user-collection}.ts`**), note CRUD actions (**`src/app/actions/{notes,voice}.ts`**), **`/notes`** listing, **`/notes/new`**, **`/notes/[id]`** with **`NoteEditor`**. Slash commands (**`/verse`**, **`/tafsir`**, **`/hadith`**) now call **`src/lib/islamic.ts`** (requires seeded Collections env vars). The long README that came with the zip is saved as **[`phase5-files-3-bundle.md`](./phase5-files-3-bundle.md)** (heirloom/cron/export APIs it mentions are largely **outside** this partial bundle).
+
+**Phase 4 drop (`Downloads/files-4`):** Research (`/research`), Library (`/library`), citation UI (`citation-cards`, `verse-modal`), **`src/lib/{islamic,research}.ts`** (Grok Collections RAG + citation-enforced Grok compose), **`src/app/actions/research.ts`** (ask, lookups, save citations), **`/api/recitation`** redirect to everyayah.com MP3s, slash commands wired to **`lookupVerse` / `searchHadith`**. Snapshot README: **[`phase4-files-4-bundle.md`](./phase4-files-4-bundle.md)**.
+
+
+
+**Phase 5 (agent chat) drop (`Downloads/files-5`):** **`/api/chat`** (streaming Grok + tools + xAI live search via `providerOptions`), **`src/lib/agent-tools.ts`** (`search_my_notes`, scripture search, `app_help`), **`/api/threads`** + **`/api/threads/[id]`**, full **`ChatWidgetFab`** (`useChat` + `DefaultChatTransport`). Bundle README (overlaps other Phase 5 docs): **[`phase5-files-5-bundle.md`](./phase5-files-5-bundle.md)**.
+
+
+
 ### Layout reference
 
 | Path | Purpose |
 |------|---------|
-| **[`package.json`](../package.json)** | Scripts: `dev` (Next + Turbopack), `build` (`prisma generate` then `next build`), `db:*` Prisma tasks. Depends include `next` 16.x, **`@ai-sdk/xai`**, `ai`, `prisma` / `@prisma/client`. **Auth.js**: `next-auth` is pinned **`5.0.0-beta.31`** — `^5.0.0` is not published on npm. Phase 2+ deps (`bullmq`, `ioredis`, `@react-pdf/renderer`, etc.) Install when those features ship. |
+| **[`package.json`](../package.json)** | Scripts: `dev`, `build`, `db:*`, **`worker`** / **`worker:dev`** (background queues). Includes **`bullmq`**, **`ioredis`**, **`@aws-sdk/client-s3`**, **`date-fns`**, **`@ai-sdk/react`**, **`ai`**, **`@ai-sdk/xai`**, **`next-auth`** **`5.0.0-beta.31`**. |
 | **`prisma/schema.prisma`** | **Canonical** datastore shape (Auth.js models + notes, citations, related notes, chat, reflections, heirloom fields on `User`, audit log). Naming is Prisma/Postgres idiomatic (`snake_case` columns where mapped); mentally align with § **Data model** sketch below. |
 | **`auth.ts`**, **`auth.config.ts`**, **`middleware.ts`**, **`next-auth.d.ts`** | Magic link via **`Resend`**; Edge-safe middleware split (`auth.config.ts` Edge-only). |
 | **`src/app/layout.tsx`** + **`globals.css`** | Tranquil design tokens (**Tailwind 4 `@theme`**), typography variables, reduced-motion guards. Fonts: **Cormorant Garamond**, **Inter**, **Amiri** via **`next/font/google`** — swap toward **Cormorant Infant** + **Amiri Quran** when the typography milestone lands (§ Visual design). |
@@ -346,4 +356,4 @@ Phase 1 closeout: reconcile errors → **merge PR / push main** → tag mileston
 | `src/app/` | App Router routes + auth API |
 | `src/components/` | UI building blocks (+ future shadcn growth) |
 
-Additional packages from the strategic stack (**`react-hook-form`**, **`bullmq`**, **`ioredis`**, **`@react-pdf/renderer`**, fuller **AI** wiring) arrive as **Week 2–5** features — not every dependency is listed in **`package.json`** on day one.
+Still outstanding vs the master vision: e.g. **`react-hook-form`**, **`@react-pdf/renderer`**, dedicated Research/chat routes — track **`package.json`** + § phased rollout.

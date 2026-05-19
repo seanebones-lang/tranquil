@@ -1,6 +1,6 @@
 {
   "name": "tranquil-space",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -10,7 +10,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "worker:dev": "tsx watch worker/index.ts",
+    "worker": "tsx worker/index.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.0",
@@ -23,7 +25,13 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^2.5.0",
-    "zod": "^3.23.0"
+    "zod": "^3.23.0",
+    "@ai-sdk/react": "^2.0.0",
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@aws-sdk/s3-request-presigner": "^3.700.0",
+    "bullmq": "^5.30.0",
+    "date-fns": "^4.1.0",
+    "ioredis": "^5.4.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
@@ -35,7 +43,9 @@
     "postcss": "^8.4.47",
     "prisma": "^6.0.0",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "dotenv": "^16.4.0",
+    "tsx": "^4.19.0"
   },
   "engines": {
     "node": ">=20.0.0"

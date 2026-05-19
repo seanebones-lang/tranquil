@@ -33,6 +33,13 @@ model User {
   reducedMotion              Boolean   @default(false)
   ambientSound               String?
   lastSeenAt                 DateTime?
+
+  // Per-user Grok Collection (provisioned on first use)
+  notesCollectionId          String?
+
+  // Weekly digest bookkeeping
+  lastDigestSentAt           DateTime?
+
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt
 
@@ -42,6 +49,8 @@ model User {
   chatThreads        ChatThread[]
   dailyReflections   DailyReflection[]
   auditEntries       AuditLog[]
+  savedCitations     SavedCitation[]
+  heirloomGrants     HeirloomAccess[] @relation("ownerToHeirlooms")
 }
 
 model Account {
@@ -111,6 +120,10 @@ model Note {
   bodyMd    String     @default("")
   source    NoteSource @default(text)
   status    NoteStatus @default(draft)
+
+  // Pipeline state - used for client polling while jobs are running
+  transcriptionStatus String  @default("none")    // none | pending | done | failed
+  organizeStatus      String  @default("pending") // pending | done | failed
 
   // AI-derived
   collectionDocId String? // id within the user's Grok Collection
@@ -228,4 +241,40 @@ model AuditLog {
   at        DateTime @default(now())
 
   @@index([userId, at])
+}
+
+model SavedCitation {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  kind        CitationKind
+  reference   String       // "2:255" or "bukhari:1:1:1"
+  arabic      String?
+  translation String?      // single best-fit translation snippet
+  translator  String?
+  grade       String?
+  note        String?      // user's personal note about this citation
+
+  createdAt   DateTime     @default(now())
+
+  @@unique([userId, kind, reference])
+  @@index([userId, createdAt])
+}
+
+model HeirloomAccess {
+  id            String   @id @default(cuid())
+  ownerId       String
+  owner         User     @relation("ownerToHeirlooms", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  heirEmail     String
+  unlockToken   String   @unique // random opaque token for the heir's magic link
+  unlockedAt    DateTime?       // when heir clicked the link
+  expiresAt     DateTime        // token validity window
+  revokedAt     DateTime?
+
+  createdAt     DateTime @default(now())
+
+  @@index([ownerId, createdAt])
+  @@index([heirEmail])
 }

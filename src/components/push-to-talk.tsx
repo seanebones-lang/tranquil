@@ -1,11 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  prepareVoiceNoteUpload,
+  finalizeVoiceNoteUpload,
+} from "@/app/actions/voice";
 import { cn } from "@/lib/utils";
 
-type RecordingState = "idle" | "requesting" | "recording" | "processing" | "error";
+type RecordingState =
+  | "idle"
+  | "requesting"
+  | "recording"
+  | "uploading"
+  | "error";
 
 export function PushToTalk() {
+  const router = useRouter();
   const [state, setState] = useState<RecordingState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -19,6 +30,35 @@ export function PushToTalk() {
     mediaRecorderRef.current = null;
     chunksRef.current = [];
   }, []);
+
+  const handleUpload = useCallback(
+    async (blob: Blob, durationSec: number) => {
+      setState("uploading");
+      try {
+        const { noteId, uploadUrl } = await prepareVoiceNoteUpload({
+          mimeType: blob.type || "audio/webm",
+          durationSec,
+        });
+
+        const putRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": blob.type || "audio/webm" },
+          body: blob,
+        });
+        if (!putRes.ok) {
+          throw new Error(`Upload failed (${putRes.status})`);
+        }
+
+        await finalizeVoiceNoteUpload({ noteId });
+        router.push(`/notes/${noteId}`);
+      } catch (e) {
+        setErrorMsg(e instanceof Error ? e.message : "Upload failed");
+        setState("error");
+        setTimeout(() => setState("idle"), 3000);
+      }
+    },
+    [router],
+  );
 
   const start = useCallback(async () => {
     if (state !== "idle") return;
@@ -41,45 +81,39 @@ export function PushToTalk() {
       };
 
       recorder.onstop = async () => {
-        setState("processing");
         const blob = new Blob(chunksRef.current, {
           type: recorder.mimeType || "audio/webm",
         });
-        const durationSec = Math.round((Date.now() - startedAtRef.current) / 1000);
-
-        // Phase 1: just log. Phase 2: upload to R2 + enqueue STT job.
-        console.info("[push-to-talk] captured audio", {
-          size: blob.size,
-          mimeType: blob.type,
-          durationSec,
-        });
-
-        // Tiny pause so the user sees the processing state momentarily
-        setTimeout(() => {
-          stopStream();
+        const durationSec = Math.max(
+          1,
+          Math.round((Date.now() - startedAtRef.current) / 1000),
+        );
+        stopStream();
+        if (blob.size > 0) {
+          await handleUpload(blob, durationSec);
+        } else {
           setState("idle");
-        }, 400);
+        }
       };
 
       startedAtRef.current = Date.now();
       recorder.start(250);
       setState("recording");
     } catch (e) {
-      const message =
-        e instanceof Error ? e.message : "Could not access the microphone.";
-      setErrorMsg(message);
+      setErrorMsg(
+        e instanceof Error ? e.message : "Could not access the microphone.",
+      );
       setState("error");
       stopStream();
       setTimeout(() => setState("idle"), 2500);
     }
-  }, [state, stopStream]);
+  }, [state, stopStream, handleUpload]);
 
   const stop = useCallback(() => {
     if (state !== "recording") return;
     mediaRecorderRef.current?.stop();
   }, [state]);
 
-  // Keyboard support: hold Space to record
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code !== "Space" || e.repeat) return;
@@ -114,7 +148,7 @@ export function PushToTalk() {
       case "idle":       return "Hold to speak";
       case "requesting": return "Listening…";
       case "recording":  return "Recording — release when done";
-      case "processing": return "Thinking…";
+      case "uploading":  return "Saving your note…";
       case "error":      return errorMsg ?? "Something went wrong";
     }
   })();
@@ -125,6 +159,7 @@ export function PushToTalk() {
         type="button"
         aria-label="Hold to speak — release when done"
         aria-pressed={state === "recording"}
+        disabled={state === "uploading"}
         onPointerDown={(e) => {
           (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
           void start();
@@ -135,7 +170,6 @@ export function PushToTalk() {
         }}
         onPointerCancel={stop}
         onPointerLeave={(e) => {
-          // Only stop if the pointer was actually captured by us
           if ((e.currentTarget as HTMLElement).hasPointerCapture?.(e.pointerId)) {
             stop();
           }
@@ -148,11 +182,12 @@ export function PushToTalk() {
           "transition-all duration-[var(--duration-fade)] ease-[var(--ease-tranquil)]",
           "shadow-[var(--shadow-lifted)]",
           "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-sage)]/30",
+          "disabled:opacity-70 disabled:cursor-wait",
           state === "recording"
             ? "bg-[var(--color-sage)] recording-pulse"
             : state === "error"
               ? "bg-[var(--color-danger)]"
-              : state === "processing"
+              : state === "uploading"
                 ? "bg-[var(--color-sage-soft)]"
                 : "bg-[var(--color-surface)] hover:bg-[var(--color-surface-strong)]",
         )}

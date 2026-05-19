@@ -11,12 +11,21 @@ export function Nav({ userName }: { userName?: string | null }) {
         A Tranquil Space
       </Link>
 
-      <div className="flex items-center gap-6 text-sm font-[var(--font-ui)]">
+      <div className="flex items-center gap-5 sm:gap-6 text-sm font-[var(--font-ui)]">
         <Link href="/" className="text-[var(--color-muted)] hover:text-[var(--color-ink)]">
           Today
         </Link>
         <Link href="/notes" className="text-[var(--color-muted)] hover:text-[var(--color-ink)]">
           Notes
+        </Link>
+        <Link href="/research" className="text-[var(--color-muted)] hover:text-[var(--color-ink)]">
+          Research
+        </Link>
+        <Link href="/library" className="text-[var(--color-muted)] hover:text-[var(--color-ink)]">
+          Library
+        </Link>
+        <Link href="/settings" className="text-[var(--color-muted)] hover:text-[var(--color-ink)]">
+          Settings
         </Link>
         {userName && (
           <span className="text-[var(--color-whisper)] hidden sm:inline">
