@@ -1,16 +1,8 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
-  "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "npm ci && npm run build"
-  },
-  "deploy": {
-    "startCommand": "npm start",
-    "restartPolicyType": "ON_FAILURE",
-    "runtime": "NODE"
-  },
   "services": {
     "web": {
+      "image": "node:20",
       "build": {
         "builder": "NIXPACKS",
         "buildCommand": "npm ci && npm run build"
@@ -22,6 +14,7 @@
       }
     },
     "worker": {
+      "image": "node:20",
       "build": {
         "builder": "NIXPACKS",
         "buildCommand": "npm ci"
