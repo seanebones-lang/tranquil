@@ -49,11 +49,11 @@ export async function GET(req: Request) {
   const where = noteId
     ? { id: noteId, userId: ownerId, deletedAt: null }
     : heirloomToken
-      ? { userId: ownerId, deletedAt: null, isHeirloomVisible: true, status: { in: ["saved", "published"] as const } }
-      : { userId: ownerId, deletedAt: null, status: { in: ["saved", "draft", "published"] as const } };
+      ? { userId: ownerId, deletedAt: null, isHeirloomVisible: true, status: { in: ["saved", "published"] } }
+      : { userId: ownerId, deletedAt: null, status: { in: ["saved", "draft", "published"] } };
 
   const notes = await prisma.note.findMany({
-    where,
+    where: where as any,
     orderBy: { createdAt: "asc" },
     select: {
       id: true,
@@ -108,7 +108,6 @@ function renderMarkdown(
     if (n.aiTags?.length) lines.push(`*Tags: ${n.aiTags.join(", ")}*`);
     lines.push("");
 
-    // Render body, converting fenced citation blocks into readable prose
     const parts = splitBodyByCitations(n.bodyMd);
     for (const p of parts) {
       if (p.kind === "text") {
