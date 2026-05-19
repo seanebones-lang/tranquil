@@ -1,29 +1,12 @@
 {
-  "$schema": "https://railway.app/json-schema.json",
+  "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "buildCommand": "npm ci && npm run build"
   },
   "deploy": {
-    "startCommand": "npm run start",
+    "startCommand": "npm start",
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
-  },
-  "services": {
-    "web": {
-      "image": "node:20",
-      "buildCommand": "npm install && npm run build",
-      "startCommand": "npm run start",
-      "env": {
-        "NODE_ENV": "production"
-      }
-    },
-    "worker": {
-      "image": "node:20",
-      "buildCommand": "npm install",
-      "startCommand": "npm run worker",
-      "env": {
-        "NODE_ENV": "production"
-      }
-    }
+    "runtime": "NODE"
   }
 }
