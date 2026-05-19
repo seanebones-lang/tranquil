@@ -229,11 +229,17 @@ if (path.startsWith("/api/export") && nextUrl.searchParams.has("heirloomToken"))
 1. Create PostgreSQL → copy `DATABASE_URL` into Vercel (and worker host).
 2. Run migrations (`npm run db:migrate`) or push schema per your policy.
 
-### Application (e.g. Vercel)
+### Application (Railway - Production)
 
-1. Import repo → set **all** env vars from `.env.example`.
-2. Build runs `prisma generate` via `postinstall` / `build` script.
-3. Configure **`CRON_SECRET`** and verify cron jobs invoke `/api/cron/*` with the Bearer header.
+**Auto-deploy is now enabled** on every push to `main`.
+
+- Railway project linked to `seanebones-lang/tranquil`
+- `railway.json` configures Nixpacks build + separate `web` (Next.js) and `worker` (BullMQ) services
+- `npm ci && npm run build` (with `postinstall: prisma generate`)
+- Web starts with `npm start`, worker with `npm run worker`
+- All env vars (`DATABASE_URL`, `REDIS_URL`, `XAI_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`, R2 credentials, etc.) must be set in Railway
+
+Push to main = instant redeploy.
 
 ### Worker + Redis
 
