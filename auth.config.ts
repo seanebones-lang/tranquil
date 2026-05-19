@@ -7,6 +7,7 @@ export default {
     verifyRequest: "/signin/check-email",
   },
   trustHost: true,
+  trustedOrigins: ["https://bizbot.store", "https://web-production-ac8f1.up.railway.app"],
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
