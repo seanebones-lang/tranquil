@@ -286,3 +286,8 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 Issues and PRs welcome for bugs and docs. Do **not** commit real `.env` files or API keys. Rotate any key that has appeared in a log or screenshot.
 
 For production, review heirloom tokens, cron secrets, and R2 bucket policies as part of your threat model.
+# DNS Records for bizbot.store (add these in your DNS provider)
+
+TXT: v=spf1 include:amazonses.com ~all
+MX: feedback-smtp.us-east-1.amazonses.com (priority 10)
+
