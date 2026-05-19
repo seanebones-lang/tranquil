@@ -8,5 +8,17 @@
     "startCommand": "npm start",
     "restartPolicyType": "ON_FAILURE",
     "runtime": "NODE"
+  },
+  "services": {
+    "web": {
+      "deployment": {
+        "startCommand": "npm start"
+      }
+    },
+    "worker": {
+      "deployment": {
+        "startCommand": "npm run worker"
+      }
+    }
   }
 }
