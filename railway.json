@@ -11,13 +11,25 @@
   },
   "services": {
     "web": {
-      "deployment": {
-        "startCommand": "npm start"
+      "build": {
+        "builder": "NIXPACKS",
+        "buildCommand": "npm ci && npm run build"
+      },
+      "deploy": {
+        "startCommand": "npm start",
+        "restartPolicyType": "ON_FAILURE",
+        "runtime": "NODE"
       }
     },
     "worker": {
-      "deployment": {
-        "startCommand": "npm run worker"
+      "build": {
+        "builder": "NIXPACKS",
+        "buildCommand": "npm ci"
+      },
+      "deploy": {
+        "startCommand": "npm run worker",
+        "restartPolicyType": "ON_FAILURE",
+        "runtime": "NODE"
       }
     }
   }
