@@ -11,6 +11,7 @@ export default {
     signIn: "/signin",
     verifyRequest: "/signin/check-email",
   },
+  trustHost: true,  // ← This fixes UntrustedHost error on Railway custom domain
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
