@@ -7,13 +7,17 @@ import { prisma } from "@/lib/db";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  // trustHost + middleware callbacks live on auth.config — merge them here too so
+  // route handlers match middleware behavior on Vercel.
+  ...authConfig,
   providers: [
     Resend({
-      apiKey: process.env.AUTH_RESEND_KEY,
-      from: process.env.EMAIL_FROM ?? "onboarding@bizbot.store",
+      apiKey: process.env.AUTH_RESEND_KEY ?? "",
+      from: process.env.EMAIL_FROM ?? "onboarding@resend.dev",
     }),
   ],
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -26,7 +30,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
-    ...authConfig.callbacks,
   },
   pages: authConfig.pages,
   events: {

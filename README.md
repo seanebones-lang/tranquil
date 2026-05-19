@@ -2,7 +2,7 @@
 
 A calm, scripture-grounded journaling app: magic-link auth, notes with voice capture hooks, Islamic research (Quran / Hadith / Tafsir via Grok Collections), a floating Grok agent with tools, heirloom sharing, accessibility-focused settings, and background jobs (STT, queues, scheduled digests and reflections).
 
-**License:** [MIT](./LICENSE) · **Node:** ≥ 20 · **Docs:** [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md) (architecture & phased plan), [`docs/README.md`](./docs/README.md) (doc index), [`seeds/README.md`](./seeds/README.md) (Phase 0 corpus upload).
+**License:** [MIT](./LICENSE) · **Node:** ≥ 20 · **Live:** https://bizbot.store · **Docs:** [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md) (architecture & phased plan), [`docs/README.md`](./docs/README.md) (doc index), [`docs/TODO_100_OF_100.md`](./docs/TODO_100_OF_100.md) (shipping checklist), [`seeds/README.md`](./seeds/README.md) (Phase 0 corpus upload).
 
 ---
 
@@ -164,7 +164,7 @@ Copy **[`.env.example`](./.env.example)** to `.env`. Summary:
 | Variable | Required for | Notes |
 |----------|----------------|-------|
 | `AUTH_SECRET` | Auth | `openssl rand -base64 32` |
-| `NEXTAUTH_URL` | Auth | Public URL, no trailing slash |
+| `NEXTAUTH_URL` | Auth | Public URL, no trailing slash (production: **`https://bizbot.store`**) |
 | `DATABASE_URL` | App | Postgres connection string |
 | `AUTH_RESEND_KEY` | Magic links + app email | Resend API key |
 | `EMAIL_FROM` | Outbound mail | Dev: `onboarding@resend.dev`; prod: verified domain |
