@@ -1,12 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 
-/**
- * Edge-safe Auth.js config used by middleware.
- * Lives separately from auth.ts because middleware runs on the Edge runtime,
- * which can't use the Prisma adapter (Node-only).
- */
 export default {
-  providers: [], // populated in auth.ts
+  providers: [],
   pages: {
     signIn: "/signin",
     verifyRequest: "/signin/check-email",
