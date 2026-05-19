@@ -67,7 +67,7 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@unique([provider, providerAccountId])
 }
@@ -77,7 +77,7 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Restrict)
 }
 
 model VerificationToken {
@@ -114,7 +114,7 @@ enum CitationKind {
 model Note {
   id        String     @id @default(cuid())
   userId    String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   title     String?
   bodyMd    String     @default("")
@@ -151,7 +151,7 @@ model Note {
 model NoteAudio {
   id                  String  @id @default(cuid())
   noteId              String  @unique
-  note                Note    @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  note                Note    @relation(fields: [noteId], references: [id], onDelete: Restrict)
 
   r2Key               String
   durationSec         Int?
@@ -163,7 +163,7 @@ model NoteAudio {
 model NoteCitation {
   id          String       @id @default(cuid())
   noteId      String
-  note        Note         @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  note        Note         @relation(fields: [noteId], references: [id], onDelete: Restrict)
 
   position    Int          // byte offset / block index in the note body
   kind        CitationKind
@@ -183,8 +183,8 @@ model RelatedNote {
   relatedNoteId String
   similarity    Float
 
-  note    Note @relation("from", fields: [noteId], references: [id], onDelete: Cascade)
-  related Note @relation("to",   fields: [relatedNoteId], references: [id], onDelete: Cascade)
+  note    Note @relation("from", fields: [noteId], references: [id], onDelete: Restrict)
+  related Note @relation("to",   fields: [relatedNoteId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
 
@@ -195,7 +195,7 @@ model RelatedNote {
 model ChatThread {
   id        String         @id @default(cuid())
   userId    String
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Restrict)
   title     String?
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
@@ -207,7 +207,7 @@ model ChatThread {
 model ChatMessage {
   id         String     @id @default(cuid())
   threadId   String
-  thread     ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  thread     ChatThread @relation(fields: [threadId], references: [id], onDelete: Restrict)
 
   role       String     // user | assistant | tool
   content    String     @db.Text
@@ -222,7 +222,7 @@ model ChatMessage {
 model DailyReflection {
   id            String   @id @default(cuid())
   userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Restrict)
   date          DateTime @db.Date
   prompt        String
   responseNoteId String?
@@ -234,7 +234,7 @@ model DailyReflection {
 model AuditLog {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
   action    String
   targetId  String?
   meta      Json?
@@ -246,7 +246,7 @@ model AuditLog {
 model SavedCitation {
   id          String       @id @default(cuid())
   userId      String
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   kind        CitationKind
   reference   String       // "2:255" or "bukhari:1:1:1"
@@ -265,7 +265,7 @@ model SavedCitation {
 model HeirloomAccess {
   id            String   @id @default(cuid())
   ownerId       String
-  owner         User     @relation("ownerToHeirlooms", fields: [ownerId], references: [id], onDelete: Cascade)
+  owner         User     @relation("ownerToHeirlooms", fields: [ownerId], references: [id], onDelete: Restrict)
 
   heirEmail     String
   unlockToken   String   @unique // random opaque token for the heir's magic link
