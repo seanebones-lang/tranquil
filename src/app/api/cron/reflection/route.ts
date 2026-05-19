@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  * Today screen reads from this table; if no row exists, it falls back to a
  * static reflection.
  *
- * Wire to a daily Vercel cron at 06:00 UTC (or whatever the user's morning is).
+ * Wire to a daily scheduled GET at 06:00 UTC (e.g. Railway Cron hitting this route).
  */
 export async function GET(req: Request) {
   const fail = checkCronAuth(req);

@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
  * Idempotent: re-running the same day won't send duplicate emails because
  * we only mint a new grant if no active grant exists.
  *
- * Wire this to a daily Vercel cron at 09:00 UTC.
+ * Wire this to a daily scheduled GET at 09:00 UTC (e.g. Railway Cron hitting this route).
  */
 
 const GRANT_TTL_DAYS = 30;     // heir has 30 days to use the link

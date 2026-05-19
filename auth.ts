@@ -8,7 +8,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   // trustHost + middleware callbacks live on auth.config — merge them here too so
-  // route handlers match middleware behavior on Vercel.
+  // route handlers match middleware behavior in production (e.g. Railway).
   ...authConfig,
   providers: [
     Resend({

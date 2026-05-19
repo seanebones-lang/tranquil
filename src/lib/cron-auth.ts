@@ -1,10 +1,10 @@
 /**
  * Cron endpoint authorization.
  *
- * Vercel cron sends `Authorization: Bearer ${CRON_SECRET}` on every scheduled
- * invocation. We verify against the env var. Same handler also runs fine when
- * triggered manually from a service like Upstash QStash or a curl call —
- * just set the matching CRON_SECRET locally.
+ * Scheduled HTTP jobs (Railway Cron, an add-on, or manual curl) should send
+ * `Authorization: Bearer ${CRON_SECRET}` on every invocation. We verify against
+ * the env var. Same handlers work when triggered from Upstash QStash or similar —
+ * just set the matching CRON_SECRET.
  */
 import { NextResponse } from "next/server";
 

@@ -18,7 +18,7 @@ function isNextRedirect(error: unknown): boolean {
 const ERROR_HELP: Record<string, string> = {
   invalid_email: "Enter a valid email address.",
   send_failed:
-    "Could not send the sign-in email. Check server logs and verify AUTH_RESEND_KEY, EMAIL_FROM, DATABASE_URL, AUTH_SECRET, and NEXTAUTH_URL on Vercel.",
+    "Could not send the sign-in email. Check server logs and verify AUTH_RESEND_KEY, EMAIL_FROM, DATABASE_URL, AUTH_SECRET, and NEXTAUTH_URL on Railway.",
 };
 
 type Props = {

@@ -87,7 +87,7 @@ After seeding, save the printed IDs in your secrets / `.env` for the Next.js app
 
 | Layer | Choice | Why |
 |-------|--------|-----|
-| Framework | Next.js 16 (App Router, RSC) | Latest stable on Vercel; server actions reduce API boilerplate |
+| Framework | Next.js 16 (App Router, RSC) | Latest App Router patterns; server actions reduce API boilerplate |
 | Language | TypeScript strict | Catches schema/citation bugs early |
 | UI | Tailwind 4 + shadcn/ui (customized) | Fast iteration; tranquil palette |
 | Auth | Auth.js v5 (`next-auth` **5 beta**) magic-link email (Resend) | One-tap login; no passwords |
@@ -100,7 +100,7 @@ After seeding, save the printed IDs in your secrets / `.env` for the Next.js app
 | Recitation | R2-hosted Alafasy (seed from everyayah.com) | Independent after preload |
 | Email | Resend | Magic links, digest |
 | PDF | `@react-pdf/renderer` server-side | Arabic glyph support |
-| Hosting | Vercel (app) + Railway (Postgres, Redis, worker, R2 endpoint) | Stated preference |
+| Hosting | Railway (Next.js web + worker services, Postgres, Redis, R2 endpoint) | Primary deployment |
 
 ---
 
@@ -273,7 +273,7 @@ Single note fullscreen; ambient audio optional; serif-forward reading.
 
 ### Week 1 — Foundation
 
-Repo + Next.js **16** + TS strict + Tailwind **4** scaffold (**landed — see § Current repository snapshot**). Auth.js magic link (**Resend**). Prisma schema + **`db:push` / migrations** toward Railway Postgres. Tranquil tokens in **`globals.css`**. **Today** + **Notes** + **Chat FAB** shells. **Outstanding:** DNS + production deploy (Vercel + Railway), optional full **shadcn** install, stakeholder device smoke tests, **commit → push**.
+Repo + Next.js **16** + TS strict + Tailwind **4** scaffold (**landed — see § Current repository snapshot**). Auth.js magic link (**Resend**). Prisma schema + **`db:push` / migrations** toward Railway Postgres. Tranquil tokens in **`globals.css`**. **Today** + **Notes** + **Chat FAB** shells. **Outstanding:** DNS + production deploy (**Railway**), optional full **shadcn** install, stakeholder device smoke tests, **commit → push**.
 
 ### Week 2 — Notes core
 
@@ -329,10 +329,10 @@ Legend: ✅ done in repo 🔲 still to do ⏭ usually later week
 | ✅ | Tranquil **design tokens** in **`globals.css`**; **Today** / **Notes** / chat FAB stubs |
 | ✅ | **`PushToTalk`** client capture (**Phase 2** wires R2 + STT) |
 | ✅ | Python **Collections** toolchain under **`seeds/`** (coordinates with **§ Phase 0** below) |
-| 🔲 | Register domain (**`atranquilspace.*`**) → DNS → Vercel production project |
+| 🔲 | Register domain (**`bizbot.store`** or final hostname) → DNS → Railway web service |
 | 🔲 | **Railway** Postgres (**`DATABASE_URL`**) run **`npm run db:push`** or **`db:migrate`** |
 | 🔲 | **Resend** keys + **`AUTH_SECRET`** + **`NEXTAUTH_URL`** verified end-to-end sign-in |
-| 🔲 | **Vercel** env parity; redeploy smoke |
+| 🔲 | **Railway** env parity; redeploy smoke |
 | ⏭ | **Railway Redis** / worker service (Week **2**) |
 | ⏭ | **R2** bucket + keys (Week **2**) |
 | ⏭ | **xAI** key + **`seeds/`** dry-run → full upload (Phase **0** / Week **3** cadence typical) |

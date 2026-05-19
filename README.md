@@ -14,7 +14,7 @@ A calm, scripture-grounded journaling app: magic-link auth, notes with voice cap
 - [Quick start](#quick-start)
 - [Phase 0 — Grok Collections](#phase-0--grok-collections)
 - [Background worker](#background-worker)
-- [Scheduled jobs (Vercel Cron)](#scheduled-jobs-vercel-cron)
+- [Scheduled jobs (Railway cron)](#scheduled-jobs-railway-cron)
 - [Environment variables](#environment-variables)
 - [npm scripts](#npm-scripts)
 - [Authentication & middleware](#authentication--middleware)
@@ -64,7 +64,7 @@ Export today is **Markdown** (`text/markdown`); PDF is left as a follow-on (see 
 ├── auth.ts / auth.config.ts   # Auth.js (Node) vs Edge-safe middleware config
 ├── middleware.ts              # NextAuth middleware + matcher
 ├── prisma/schema.prisma       # Canonical schema (users, notes, chat, heirloom, audit, …)
-├── vercel.json                # Cron schedules → /api/cron/*
+├── vercel.json                # Reference cron paths/schedules (trigger via Railway Cron or similar)
 ├── worker/                    # BullMQ worker entrypoint + jobs
 ├── seeds/                     # Python scripts — upload Quran/Hadith/Tafsir to Collections
 ├── docs/                      # Build plan, bundle notes, doc index
@@ -143,9 +143,9 @@ Run the worker alongside the Next.js server wherever you use uploads + queues.
 
 ---
 
-## Scheduled jobs (Vercel Cron)
+## Scheduled jobs (Railway cron)
 
-[`vercel.json`](./vercel.json) defines HTTP cron targets:
+[`vercel.json`](./vercel.json) lists **recommended paths and UTC timings**. On **Railway**, trigger those URLs yourself — for example **Railway Cron**, a cron add-on, or any scheduler that **`GET`**s your app with **`Authorization: Bearer CRON_SECRET`**.
 
 | Path | Purpose |
 |------|---------|
@@ -153,7 +153,7 @@ Run the worker alongside the Next.js server wherever you use uploads + queues.
 | `/api/cron/reflection` | Generates per-user daily reflections |
 | `/api/cron/digest` | Weekly email digest |
 
-Each handler expects **`Authorization: Bearer <CRON_SECRET>`** (see `src/lib/cron-auth.ts`). Set `CRON_SECRET` in Vercel (and locally when testing crons).
+Each handler expects **`Authorization: Bearer <CRON_SECRET>`** (see `src/lib/cron-auth.ts`). Set **`CRON_SECRET`** in Railway for **web** (and reuse it wherever schedules those URLs).
 
 ---
 
@@ -203,7 +203,7 @@ Seeds use a separate **[`seeds/.env.example`](./seeds/.env.example)** — keep u
 **Important:** Several flows must reach the server **without** a logged-in session:
 
 - **`/heirloom-access`** — heirs redeeming magic links  
-- **`/api/cron/*`** — Vercel Cron (validated via `CRON_SECRET`)  
+- **`/api/cron/*`** — scheduled HTTP jobs (validated via `CRON_SECRET`)  
 - **`/api/export?heirloomToken=...`** — heirloom markdown export  
 
 Ensure `callbacks.authorized` in **`auth.config.ts`** returns `true` for those paths before enforcing `isLoggedIn`. Example pattern:
@@ -226,7 +226,7 @@ if (path.startsWith("/api/export") && nextUrl.searchParams.has("heirloomToken"))
 
 ### Database (e.g. Railway)
 
-1. Create PostgreSQL → copy `DATABASE_URL` into Vercel (and worker host).
+1. Create PostgreSQL → copy `DATABASE_URL` into Railway (**web** + **worker** services).
 2. Run migrations (`npm run db:migrate`) or push schema per your policy.
 
 ### Application (Railway - Production)
@@ -237,7 +237,7 @@ if (path.startsWith("/api/export") && nextUrl.searchParams.has("heirloomToken"))
 - `railway.json` configures Nixpacks build + separate `web` (Next.js) and `worker` (BullMQ) services
 - `npm ci && npm run build` (with `postinstall: prisma generate`)
 - Web starts with `npm start`, worker with `npm run worker`
-- All env vars (`DATABASE_URL`, `REDIS_URL`, `XAI_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`, R2 credentials, etc.) must be set in Railway
+- All env vars (`DATABASE_URL`, `REDIS_URL`, `XAI_API_KEY`, `AUTH_RESEND_KEY`, `AUTH_SECRET`, `NEXTAUTH_URL`, `CRON_SECRET`, R2 credentials, etc.) must be set in Railway
 
 Push to main = instant redeploy.
 
@@ -248,6 +248,10 @@ Deploy **`npm run worker`** as a separate process with the same `DATABASE_URL`, 
 ### Resend
 
 Production domains must be **verified** in Resend; update `EMAIL_FROM` accordingly.
+
+### Custom domain (bizbot.store)
+
+Point DNS at Railway’s target for the **web** service and set **`NEXTAUTH_URL`** / **`AUTH_URL`** to **`https://bizbot.store`** (no trailing slash) on Railway.
 
 ---
 
@@ -286,8 +290,4 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 Issues and PRs welcome for bugs and docs. Do **not** commit real `.env` files or API keys. Rotate any key that has appeared in a log or screenshot.
 
 For production, review heirloom tokens, cron secrets, and R2 bucket policies as part of your threat model.
-# DNS Records for bizbot.store (add these in your DNS provider)
-
-TXT: v=spf1 include:amazonses.com ~all
-MX: feedback-smtp.us-east-1.amazonses.com (priority 10)
 
