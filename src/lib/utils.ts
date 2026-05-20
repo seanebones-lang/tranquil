@@ -18,3 +18,7 @@ export function firstName(fullName: string | null | undefined): string {
   if (!fullName) return "";
   return fullName.split(" ")[0] ?? "";
 }
+
+export function wordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
