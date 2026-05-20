@@ -155,9 +155,13 @@ a:hover { color: var(--color-sage-deep); }
   animation: breath 1.6s var(--ease-tranquil) infinite;
 }
 
-/* Dark mode */
+/* Dark mode - full token remapping inside @media so all var() calls respect OS preference */
 @media (prefers-color-scheme: dark) {
   html {
+    --color-paper: var(--color-paper-dark);
+    --color-surface: var(--color-surface-dark);
+    --color-ink: var(--color-ink-dark);
+    --color-muted: var(--color-muted-dark);
     background: var(--color-paper-dark);
     color: var(--color-ink-dark);
   }
