@@ -1,5 +1,6 @@
 import { auth } from "~/auth";
 import { prisma } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
   streamText,
   convertToModelMessages,
@@ -57,6 +58,15 @@ export async function POST(req: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
   const userId = session.user.id;
+
+  // Rate limiting (30 req / 60s per user)
+  const rate = await checkRateLimit(userId);
+  if (!rate.success) {
+    return new Response(rate.message, {
+      status: 429,
+      headers: { "Retry-After": rate.retryAfter.toString() },
+    });
+  }
 
   const { messages, threadId: incomingThreadId } = (await req.json()) as {
     messages: UIMessage[];
