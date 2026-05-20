@@ -128,7 +128,7 @@ export default async function TodayPage() {
                             {n.title ?? "Untitled"}
                           </p>
                           <p className="text-sm text-[var(--color-muted)] font-[var(--font-ui)] line-clamp-1 mt-0.5">
-                            {n.aiSummary ?? n.bodyMd.slice(0, 120) ?? ""}
+                            {n.aiSummary ?? n.bodyMd?.slice(0, 120) ?? ""}
                           </p>
                         </div>
                         <span className="text-xs text-[var(--color-whisper)] font-[var(--font-ui)] shrink-0">

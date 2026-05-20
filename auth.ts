@@ -7,17 +7,18 @@ import { prisma } from "@/lib/db";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
-  // trustHost + middleware callbacks live on auth.config — merge them here too so
+  // trustHost + middleware callbacks live on auth.config — merge them here so
   // route handlers match middleware behavior in production (e.g. Railway).
   ...authConfig,
   providers: [
     Resend({
       apiKey: process.env.AUTH_RESEND_KEY ?? "",
-      from: process.env.EMAIL_FROM ?? "onboarding@resend.dev",
+      from: process.env.EMAIL_FROM ?? (process.env.NODE_ENV === "production"
+        ? (() => { throw new Error("EMAIL_FROM not set in production"); })()
+        : "onboarding@resend.dev"),
     }),
   ],
   callbacks: {
-    ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -31,7 +32,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-  pages: authConfig.pages,
+  // pages defined once in authConfig — don't re-declare here to avoid ambiguity
   events: {
     async signIn({ user }) {
       // Stamp lastSeenAt for heirloom dormancy detection

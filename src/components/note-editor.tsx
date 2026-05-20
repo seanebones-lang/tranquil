@@ -23,6 +23,7 @@ type Props = {
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 type Mode = "write" | "read";
+type DeleteState = "idle" | "confirm";
 
 const AUTOSAVE_DEBOUNCE_MS = 800;
 
@@ -39,6 +40,7 @@ export function NoteEditor(props: Props) {
   const [topic, setTopic] = useState(props.initialTopic);
   const [slashError, setSlashError] = useState<string | null>(null);
   const [expanding, setExpanding] = useState(false);
+  const [deleteState, setDeleteState] = useState<DeleteState>("idle");
   const [, startTransition] = useTransition();
 
   const lastSavedRef = useRef({ title: props.initialTitle, body: props.initialBody });
@@ -106,9 +108,20 @@ export function NoteEditor(props: Props) {
   }, [title, body, props.noteId]);
 
   // ------- Status polling -------
+  // Use a ref to track the interval ID so we can reliably clear it across
+  // re-renders without stacking multiple intervals.
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
     const isWorking =
       transcriptionStatus === "pending" || organizeStatus === "pending";
+
+    // Always clear any existing interval first to prevent stacking
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+
     if (!isWorking) return;
     let cancelled = false;
 
@@ -140,11 +153,14 @@ export function NoteEditor(props: Props) {
       }
     };
 
-    const id = setInterval(tick, 2500);
+    pollIntervalRef.current = setInterval(tick, 2500);
     void tick();
     return () => {
       cancelled = true;
-      clearInterval(id);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
     };
   }, [transcriptionStatus, organizeStatus, props.noteId, title]);
 
@@ -239,20 +255,25 @@ export function NoteEditor(props: Props) {
               "placeholder:text-[var(--color-whisper)] placeholder:italic",
             )}
           />
-          <div className="mt-3 flex items-center gap-4 text-xs font-[var(--font-ui)] text-[var(--color-whisper)] flex-wrap">
+          <div className="mt-3 flex items-center justify-between gap-4 text-xs font-[var(--font-ui)] text-[var(--color-whisper)] flex-wrap">
             <span>
               Type <code className="text-[var(--color-muted)]">/verse 2:255</code>,{" "}
               <code className="text-[var(--color-muted)]">/tafsir 2:255</code>, or{" "}
               <code className="text-[var(--color-muted)]">/hadith kindness to neighbors</code>
             </span>
-            <button
-              type="button"
-              onClick={expandSlashCommands}
-              disabled={expanding || findSlashCommands(body).length === 0}
-              className="text-[var(--color-dusk)] hover:text-[var(--color-sage-deep)] disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              {expanding ? "Looking up…" : "Expand citations"}
-            </button>
+            <span className="flex items-center gap-3 shrink-0">
+              <span className="tabular-nums">
+                {wordCount(body)} words · {body.length.toLocaleString()} chars
+              </span>
+              <button
+                type="button"
+                onClick={expandSlashCommands}
+                disabled={expanding || findSlashCommands(body).length === 0}
+                className="text-[var(--color-dusk)] hover:text-[var(--color-sage-deep)] disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                {expanding ? "Looking up…" : "Expand citations"}
+              </button>
+            </span>
           </div>
           {slashError && (
             <p className="mt-2 text-sm text-[var(--color-danger)] font-[var(--font-ui)]">
@@ -288,19 +309,40 @@ export function NoteEditor(props: Props) {
         )}
 
         <div className="flex items-center gap-4 pt-4">
-          <button
-            type="button"
-            onClick={() => {
-              if (!confirm("Delete this note? This cannot be undone.")) return;
-              startTransition(async () => {
-                await deleteNote(props.noteId);
-                router.push("/notes");
-              });
-            }}
-            className="text-sm font-[var(--font-ui)] text-[var(--color-muted)] hover:text-[var(--color-danger)]"
-          >
-            Delete
-          </button>
+          {deleteState === "idle" ? (
+            <button
+              type="button"
+              onClick={() => setDeleteState("confirm")}
+              className="text-sm font-[var(--font-ui)] text-[var(--color-muted)] hover:text-[var(--color-danger)]"
+            >
+              Delete
+            </button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-[var(--font-ui)] text-[var(--color-danger)]">
+                Delete this note?
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  startTransition(async () => {
+                    await deleteNote(props.noteId);
+                    router.push("/notes");
+                  });
+                }}
+                className="text-sm font-[var(--font-ui)] text-white bg-[var(--color-danger)] px-3 py-1 rounded-full hover:opacity-90"
+              >
+                Yes, delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteState("idle")}
+                className="text-sm font-[var(--font-ui)] text-[var(--color-muted)] hover:text-[var(--color-ink)]"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

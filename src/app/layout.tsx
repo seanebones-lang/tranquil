@@ -51,7 +51,7 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   // Read user preferences on the server so SSR matches what the user expects.
-  // Falls back silently if no session.
+  // Skip the DB round-trip entirely when there's no session (public pages).
   let fontScale = 1.0;
   let reducedMotion = false;
   let contrast: "standard" | "high" = "standard";
@@ -70,7 +70,7 @@ export default async function RootLayout({
       }
     }
   } catch {
-    /* unauthenticated routes don't need this */
+    /* unauthenticated or DB unavailable — fall through with defaults */
   }
 
   return (

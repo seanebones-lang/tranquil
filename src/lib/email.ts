@@ -12,12 +12,22 @@ const API = "https://api.resend.com/emails";
 
 function key(): string {
   const k = process.env.AUTH_RESEND_KEY;
-  if (!k) throw new Error("AUTH_RESEND_KEY not set");
+  if (!k) throw new Error("AUTH_RESEND_KEY not set — add it to Railway environment variables.");
   return k;
 }
 
 function from(): string {
-  return process.env.EMAIL_FROM ?? "onboarding@resend.dev";
+  const f = process.env.EMAIL_FROM;
+  if (!f) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "EMAIL_FROM not set — set it to your verified Resend domain address (e.g. hello@yourdomain.com) in Railway environment variables.",
+      );
+    }
+    // Dev fallback only — Resend sandbox works with this
+    return "onboarding@resend.dev";
+  }
+  return f;
 }
 
 export async function sendEmail(opts: {
