@@ -4,7 +4,7 @@ import { xai } from "@ai-sdk/xai";
 import { z } from "zod";
 import { prisma } from "../../src/lib/db";
 import { MODELS } from "../../src/lib/xai";
-import { embedQueue, QUEUES, type OrganizeJob } from "../../src/lib/queue";
+import { getEmbedQueue, QUEUES, type OrganizeJob } from "../../src/lib/queue";
 
 const OrganizedNoteSchema = z.object({
   title: z
@@ -100,7 +100,7 @@ export async function organizeProcessor(job: Job<OrganizeJob>) {
   });
 
   // Chain embed job to upload this note to user's Collection and link related notes
-  await embedQueue.add(QUEUES.embed, { noteId }, {
+  await getEmbedQueue().add(QUEUES.embed, { noteId }, {
     jobId: `embed:${noteId}`,
     attempts: 3,
     backoff: { type: "exponential", delay: 3_000 },

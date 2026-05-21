@@ -1,29 +1,70 @@
-import { RateLimiterRedis } from 'rate-limiter-flexible';
-import IORedis from 'ioredis';
+import {
+  RateLimiterRedis,
+  RateLimiterRes,
+} from "rate-limiter-flexible";
+import IORedis from "ioredis";
 
-const redisUrl = process.env.REDIS_URL;
-const redisClient = redisUrl
-  ? new IORedis(redisUrl, { maxRetriesPerRequest: null })
-  : new IORedis({ host: 'localhost', port: 6379, maxRetriesPerRequest: null });
+/** Lazy so `/api/chat` import doesn’t open Redis unless someone actually chats. */
+let redisClient: IORedis | null = null;
+let rateLimiterRedis: RateLimiterRedis | null = null;
 
-const rateLimiter = new RateLimiterRedis({
-  storeClient: redisClient,
-  points: 30,           // 30 requests
-  duration: 60,         // per 60 seconds (per user)
-  blockDuration: 120,   // block for 2min on exceed
-  keyPrefix: 'rl:chat',
-});
+function getRateLimiterRedis(): RateLimiterRedis {
+  if (rateLimiterRedis) return rateLimiterRedis;
 
-export async function checkRateLimit(userId: string): Promise<{ success: true } | { success: false; retryAfter: number; message: string }> {
+  const redisUrl = process.env.REDIS_URL?.trim();
+  redisClient =
+    redisUrl && redisUrl.length > 0
+      ? new IORedis(redisUrl, {
+          maxRetriesPerRequest: null,
+          retryStrategy(times) {
+            return Math.min(times * 250, 5_000);
+          },
+        })
+      : new IORedis({
+          host: "localhost",
+          port: 6379,
+          maxRetriesPerRequest: null,
+        });
+
+  redisClient.on("error", (err) => {
+    // eslint-disable-next-line no-console
+    console.error("[redis/ratelimit]", err.message);
+  });
+
+  rateLimiterRedis = new RateLimiterRedis({
+    storeClient: redisClient,
+    points: 30,
+    duration: 60,
+    blockDuration: 120,
+    keyPrefix: "rl:chat",
+  });
+
+  return rateLimiterRedis;
+}
+
+export async function checkRateLimit(userId: string): Promise<
+  { success: true } | { success: false; retryAfter: number; message: string }
+> {
   try {
-    await rateLimiter.consume(userId);
+    await getRateLimiterRedis().consume(userId);
     return { success: true };
-  } catch (rejRes: any) {
-    const retryAfter = Math.ceil((rejRes.msBeforeNext || 60000) / 1000);
-    return {
-      success: false,
-      retryAfter,
-      message: `Rate limit exceeded. Try again in ${retryAfter}s.`,
-    };
+  } catch (e: unknown) {
+    // Normal path: quota exceeded → RateLimiterRes
+    if (e instanceof RateLimiterRes) {
+      const retryAfter = Math.ceil((e.msBeforeNext || 60000) / 1000);
+      return {
+        success: false,
+        retryAfter,
+        message: `Rate limit exceeded. Try again in ${retryAfter}s.`,
+      };
+    }
+
+    // Redis WRONGPASS, network, etc.: don’t brick chat with hard 500s in prod debugging.
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[rate-limit] Redis error; skipping limit for this request",
+      e instanceof Error ? e.message : e,
+    );
+    return { success: true };
   }
 }

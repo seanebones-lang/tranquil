@@ -268,6 +268,9 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 | Research / agent scripture errors | Phase 0 complete; `QURAN_*` / `HADITH_*` / `TAFSIR_*` IDs + `XAI_API_KEY` set. |
 | Worker idle | `REDIS_URL` reachable from worker host; jobs actually enqueued. |
 | Mic greyed “isn’t detecting R2…” | Vars are read **at runtime** — restart **`npm run dev`** (or redeploy Railway) after setting **`R2_ACCOUNT_ID`**, **`R2_ACCESS_KEY_ID`**, **`R2_SECRET_ACCESS_KEY`**. No wrapping quotes unless the value itself contains spaces. Optionally **`CLOUDFLARE_ACCOUNT_ID`** instead of **`R2_ACCOUNT_ID`**. |
+| **`WRONGPASS` / torrent of `[ioredis]` in Railway logs** | **`REDIS_URL`** on the **web** service does not match Railway Redis credentials (often after reset or typo). Paste the **`REDIS_URL`** from Railway’s Redis service variables into **web** → redeploy web + worker. |
+| Clerk **Missing publishableKey** in logs | On Railway **web** set **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** plus **`CLERK_SECRET_KEY`**, redeploy. Edge middleware reads the **public** key at runtime. |
+| Browser shows bare **Internal Server Error** | Next.js hides prod stack traces — read **Railway deploy logs** for the real error (often Redis or Clerk keys). |
 
 ---
 

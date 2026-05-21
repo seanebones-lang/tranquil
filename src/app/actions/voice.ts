@@ -4,7 +4,7 @@ import { z } from "zod";
 import { auth } from "~/auth";
 import { prisma } from "@/lib/db";
 import { audioKey, isR2Configured, signedUploadUrl } from "@/lib/r2";
-import { transcribeQueue, QUEUES } from "@/lib/queue";
+import { enqueueTranscribe } from "@/lib/queue";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -75,11 +75,7 @@ export async function finalizeVoiceNoteUpload(
   });
   if (!note) throw new Error("Note not found");
 
-  await transcribeQueue.add(QUEUES.transcribe, { noteId }, {
-    jobId: `transcribe:${noteId}`,
-    attempts: 3,
-    backoff: { type: "exponential", delay: 2_000 },
-  });
+  await enqueueTranscribe(noteId);
 
   return { ok: true };
 }
