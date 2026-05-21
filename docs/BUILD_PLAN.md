@@ -27,7 +27,7 @@ Phase 1 scaffold was **merged into this repo from `Downloads/files-2`** (flat fi
 |------|---------|
 | **[`package.json`](../package.json)** | Scripts: `dev`, `build`, `db:*`, **`worker`** / **`worker:dev`** (background queues). Includes **`bullmq`**, **`ioredis`**, **`@aws-sdk/client-s3`**, **`date-fns`**, **`@ai-sdk/react`**, **`ai`**, **`@ai-sdk/xai`**, **`@clerk/nextjs`**. |
 | **`prisma/schema.prisma`** | **Canonical** datastore shape (`User` includes **`clerkUserId`** + notes, citations, related notes, chat, reflections, heirloom fields, audit log). Naming is Prisma/Postgres idiomatic (`snake_case` columns where mapped); mentally align with § **Data model** sketch below. |
-| **`auth.ts`**, **`middleware.ts`** | Clerk session → Prisma **`User`** bridge (`~/auth`); **`middleware.ts`** uses **`clerkMiddleware`** + route guards / public-path exceptions. |
+| **`auth.ts`**, **`src/middleware.ts`** | Clerk session → Prisma **`User`** bridge (`~/auth`); **`src/middleware.ts`** uses **`clerkMiddleware`** + route guards / public-path exceptions. |
 | **`src/app/layout.tsx`** + **`globals.css`** | Tranquil design tokens (**Tailwind 4 `@theme`**), typography variables, reduced-motion guards. Fonts: **Cormorant Garamond**, **Inter**, **Amiri** via **`next/font/google`** — swap toward **Cormorant Infant** + **Amiri Quran** when the typography milestone lands (§ Visual design). |
 | **`src/app/page.tsx`** | **Today** — heartbeat `lastSeenAt`, greeting, **`PushToTalk`** (captures blob; Phase 2 → R2 + STT), reflection + recent placeholders, **`ChatWidgetFab`** sheet stub. |
 | **`src/app/(auth)/signin/`**, **`signup/`** | Clerk **`SignIn`** / **`SignUp`** embeds (`routing="path"`); **`check-email`** redirects (legacy magic-link UX retired). |

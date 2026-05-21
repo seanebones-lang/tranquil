@@ -64,13 +64,13 @@ Export today is **Markdown** (`text/markdown`); PDF is left as a follow-on (see 
 
 ```
 ├── auth.ts                    # Clerk → Prisma user bridge (import as ~/auth)
-├── middleware.ts              # Clerk middleware + public-route exceptions (cron, heirloom export)
 ├── prisma/schema.prisma       # Canonical schema (users, notes, chat, heirloom, audit, …)
 ├── vercel.json                # Reference cron paths/schedules (trigger via Railway Cron or similar)
 ├── worker/                    # BullMQ worker entrypoint + jobs
 ├── seeds/                     # Python scripts — upload Quran/Hadith/Tafsir to Collections
 ├── docs/                      # Build plan, bundle notes, doc index
 └── src/
+    ├── middleware.ts          # Clerk middleware (must live under src/ with this layout)
     ├── app/                   # App Router pages + API routes
     │   ├── api/
     │   │   ├── chat/
@@ -200,7 +200,7 @@ Seeds use a separate **[`seeds/.env.example`](./seeds/.env.example)** — keep u
 
 - **Clerk** handles sign-in and sign-up at **`/signin`** and **`/signup`** (also Clerk-hosted **`/sign-in`** / **`/sign-up`** paths are allowed).
 - **`auth.ts`** (repo root, import **`~/auth`**): bridges Clerk **`currentUser()`** to Prisma **`User`** — creates users or links **`clerkUserId`** so **`session.user.id`** stays your DB primary key.
-- **`middleware.ts`**: **`clerkMiddleware`** + **`auth.protect()`** for protected routes; static assets and Clerk internals are skipped via matcher.
+- **`src/middleware.ts`**: **`clerkMiddleware`** + **`auth.protect()`** for protected routes; static assets and Clerk internals are skipped via matcher.
 
 **Important:** These flows must reach the server **without** a Clerk session (middleware allows them explicitly):
 
@@ -209,7 +209,7 @@ Seeds use a separate **[`seeds/.env.example`](./seeds/.env.example)** — keep u
 - **`/api/export?heirloomToken=...`** — heirloom markdown export  
 - **`/api/recitation`** — public recitation endpoint  
 
-When adding new public routes, update **`middleware.ts`** so they are not blocked by **`auth.protect()`**.
+When adding new public routes, update **`src/middleware.ts`** so they are not blocked by **`auth.protect()`**.
 
 ---
 
