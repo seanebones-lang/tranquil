@@ -5,7 +5,31 @@
  * `{ user: { id, name, email } } | null` where `id` is the Prisma `User.id`.
  */
 import { auth as clerkAuth, currentUser } from "@clerk/nextjs/server";
+import type { User } from "@prisma/client";
 import { prisma } from "@/lib/db";
+
+/** Avoid duplicate Clerk signups racing on the same inbox, or casing drift vs Postgres. */
+function isPrismaUniqueConstraint(e: unknown): boolean {
+  return (
+    typeof e === "object" &&
+    e !== null &&
+    "code" in e &&
+    (e as { code: string }).code === "P2002"
+  );
+}
+
+async function findUserByEmailLoose(mail: string): Promise<User | null> {
+  const trimmed = mail.trim();
+  if (!trimmed) return null;
+
+  let row = await prisma.user.findUnique({ where: { email: trimmed } });
+  if (row) return row;
+
+  row = await prisma.user.findFirst({
+    where: { email: { equals: trimmed, mode: "insensitive" } },
+  });
+  return row;
+}
 
 function clerkFallbackEmail(clerkUserId: string): string {
   const safe = clerkUserId.replace(/[^a-zA-Z0-9]/g, "_");
@@ -19,8 +43,9 @@ export async function auth(): Promise<{
   if (!userId) return null;
 
   const cu = await currentUser();
-  const email =
-    cu?.primaryEmailAddress?.emailAddress ?? clerkFallbackEmail(userId);
+  const email = (
+    cu?.primaryEmailAddress?.emailAddress ?? clerkFallbackEmail(userId)
+  ).trim();
   const name =
     cu?.fullName ??
     cu?.username ??
@@ -33,25 +58,44 @@ export async function auth(): Promise<{
   });
 
   if (!user) {
-    const byEmail = await prisma.user.findUnique({ where: { email } });
+    let byEmail = await findUserByEmailLoose(email);
     if (byEmail) {
       user = await prisma.user.update({
         where: { id: byEmail.id },
         data: {
           clerkUserId: userId,
+          email,
           name: name ?? byEmail.name,
           image: image ?? byEmail.image,
         },
       });
     } else {
-      user = await prisma.user.create({
-        data: {
-          clerkUserId: userId,
-          email,
-          name,
-          image,
-        },
-      });
+      try {
+        user = await prisma.user.create({
+          data: {
+            clerkUserId: userId,
+            email,
+            name,
+            image,
+          },
+        });
+      } catch (e) {
+        if (!isPrismaUniqueConstraint(e)) throw e;
+
+        // Concurrent create OR email matched with different casing in DB only on insert.
+        byEmail = await findUserByEmailLoose(email);
+        if (!byEmail) throw e;
+
+        user = await prisma.user.update({
+          where: { id: byEmail.id },
+          data: {
+            clerkUserId: userId,
+            email,
+            name: name ?? byEmail.name,
+            image: image ?? byEmail.image,
+          },
+        });
+      }
     }
   } else {
     const data: {
