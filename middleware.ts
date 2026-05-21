@@ -1,11 +1,30 @@
-import NextAuth from "next-auth";
-import authConfig from "./auth.config";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export const { auth: middleware } = NextAuth(authConfig);
+const isPublicRoute = createRouteMatcher([
+  "/signin(.*)",
+  "/signup(.*)",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+]);
 
-export default middleware;
+export default clerkMiddleware(async (auth, req) => {
+  const { pathname, searchParams } = req.nextUrl;
+
+  if (pathname.startsWith("/api/cron")) return;
+  if (pathname.startsWith("/heirloom-access")) return;
+  if (pathname.startsWith("/api/export") && searchParams.has("heirloomToken"))
+    return;
+  if (pathname.startsWith("/api/recitation")) return;
+
+  if (isPublicRoute(req)) return;
+
+  await auth.protect();
+});
 
 export const config = {
-  // Match everything except: API auth routes, Next.js internals, and static assets
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|gif|webp|ico|webmanifest)$).*)"],
+  matcher: [
+    "/((?!.+\\.[\\w]+$|_next).*)",
+    "/",
+    "/(api|trpc)(.*)",
+  ],
 };

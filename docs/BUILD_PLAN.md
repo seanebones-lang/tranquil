@@ -25,14 +25,13 @@ Phase 1 scaffold was **merged into this repo from `Downloads/files-2`** (flat fi
 
 | Path | Purpose |
 |------|---------|
-| **[`package.json`](../package.json)** | Scripts: `dev`, `build`, `db:*`, **`worker`** / **`worker:dev`** (background queues). Includes **`bullmq`**, **`ioredis`**, **`@aws-sdk/client-s3`**, **`date-fns`**, **`@ai-sdk/react`**, **`ai`**, **`@ai-sdk/xai`**, **`next-auth`** **`5.0.0-beta.31`**. |
-| **`prisma/schema.prisma`** | **Canonical** datastore shape (Auth.js models + notes, citations, related notes, chat, reflections, heirloom fields on `User`, audit log). Naming is Prisma/Postgres idiomatic (`snake_case` columns where mapped); mentally align with § **Data model** sketch below. |
-| **`auth.ts`**, **`auth.config.ts`**, **`middleware.ts`**, **`next-auth.d.ts`** | Magic link via **`Resend`**; Edge-safe middleware split (`auth.config.ts` Edge-only). |
+| **[`package.json`](../package.json)** | Scripts: `dev`, `build`, `db:*`, **`worker`** / **`worker:dev`** (background queues). Includes **`bullmq`**, **`ioredis`**, **`@aws-sdk/client-s3`**, **`date-fns`**, **`@ai-sdk/react`**, **`ai`**, **`@ai-sdk/xai`**, **`@clerk/nextjs`**. |
+| **`prisma/schema.prisma`** | **Canonical** datastore shape (`User` includes **`clerkUserId`** + notes, citations, related notes, chat, reflections, heirloom fields, audit log). Naming is Prisma/Postgres idiomatic (`snake_case` columns where mapped); mentally align with § **Data model** sketch below. |
+| **`auth.ts`**, **`middleware.ts`** | Clerk session → Prisma **`User`** bridge (`~/auth`); **`middleware.ts`** uses **`clerkMiddleware`** + route guards / public-path exceptions. |
 | **`src/app/layout.tsx`** + **`globals.css`** | Tranquil design tokens (**Tailwind 4 `@theme`**), typography variables, reduced-motion guards. Fonts: **Cormorant Garamond**, **Inter**, **Amiri** via **`next/font/google`** — swap toward **Cormorant Infant** + **Amiri Quran** when the typography milestone lands (§ Visual design). |
 | **`src/app/page.tsx`** | **Today** — heartbeat `lastSeenAt`, greeting, **`PushToTalk`** (captures blob; Phase 2 → R2 + STT), reflection + recent placeholders, **`ChatWidgetFab`** sheet stub. |
-| **`src/app/(auth)/signin/`** | Email capture + **`/signin/check-email`** UX per Auth.js **`pages`** config. |
+| **`src/app/(auth)/signin/`**, **`signup/`** | Clerk **`SignIn`** / **`SignUp`** embeds (`routing="path"`); **`check-email`** redirects (legacy magic-link UX retired). |
 | **`src/app/notes/page.tsx`** | Notes shell (“Phase 2” placeholder). |
-| **`src/app/api/auth/[...nextauth]/route.ts`** | Auth.js HTTP handlers (`GET`/`POST`). |
 | **`src/components/`** | `nav`, `push-to-talk`, `chat-widget-fab`; **`ui/`** has hand-rolled `card`/`button`/`input` (Tailwind) — **not** a full `shadcn` CLI catalogue yet (Week 1 → optional Week 2 hardening). |
 | **`src/lib/db.ts`** | Singleton **Prisma** client for Server Components / server actions. |
 | **[`README.md`](../README.md)** | Phase 1 “what runs today”, local Postgres snippet, troubleshooting — **pairs with this file**. |
@@ -41,7 +40,7 @@ Phase 1 scaffold was **merged into this repo from `Downloads/files-2`** (flat fi
 
 | File | Audience |
 |------|----------|
-| **[`.env.example`](../.env.example)** (repo root) | Next.js — `AUTH_*`, **`NEXTAUTH_URL`**, **`DATABASE_URL`**, **`EMAIL_FROM`**, **xAI**, collection IDs (**after** Phase 0), **R2**, **Redis** placeholders. |
+| **[`.env.example`](../.env.example)** (repo root) | Next.js — Clerk keys, **`NEXTAUTH_URL`**, **`DATABASE_URL`**, **`AUTH_RESEND_KEY`** / **`EMAIL_FROM`** (digest), **xAI**, collection IDs (**after** Phase 0), **R2**, **Redis** placeholders. |
 | **[`seeds/.env.example`](../seeds/.env.example)** | Python seed scripts — **`XAI_API_KEY`** + (**after** uploads) **`QURAN_COLLECTION_ID`** / **`HADITH_COLLECTION_ID`** / **`TAFSIR_COLLECTION_ID`** for **`verify.py`**. |
 
 ---
@@ -90,7 +89,7 @@ After seeding, save the printed IDs in your secrets / `.env` for the Next.js app
 | Framework | Next.js 16 (App Router, RSC) | Latest App Router patterns; server actions reduce API boilerplate |
 | Language | TypeScript strict | Catches schema/citation bugs early |
 | UI | Tailwind 4 + shadcn/ui (customized) | Fast iteration; tranquil palette |
-| Auth | Auth.js v5 (`next-auth` **5 beta**) magic-link email (Resend) | One-tap login; no passwords |
+| Auth | Clerk (`@clerk/nextjs`) + Prisma **`User.clerkUserId`** | Hosted auth; DB stays source of truth for app **`user.id`** |
 | Database | Postgres 17 on Railway | Notes, citations, threads, audit |
 | Object storage | Cloudflare R2 | Audio, PDF exports, recitation cache |
 | Background jobs | BullMQ + Redis on Railway | STT, tagging, embeddings sync, linking, digest |
@@ -98,7 +97,7 @@ After seeding, save the printed IDs in your secrets / `.env` for the Next.js app
 | AI models | `grok-4.3` (chat/agent), `grok-4.1-fast` (tagging/titles), `grok-stt`, `grok-embedding-small` (Collections), `grok-tts` optional | Right model per job |
 | Vector / RAG | Grok Collections (hybrid retrieval) | Managed; citations-native; no self-hosted pgvector |
 | Recitation | R2-hosted Alafasy (seed from everyayah.com) | Independent after preload |
-| Email | Resend | Magic links, digest |
+| Email | Resend | Digest (and other transactional mail as needed) |
 | PDF | `@react-pdf/renderer` server-side | Arabic glyph support |
 | Hosting | Railway (Next.js web + worker services, Postgres, Redis, R2 endpoint) | Primary deployment |
 
@@ -273,7 +272,7 @@ Single note fullscreen; ambient audio optional; serif-forward reading.
 
 ### Week 1 — Foundation
 
-Repo + Next.js **16** + TS strict + Tailwind **4** scaffold (**landed — see § Current repository snapshot**). Auth.js magic link (**Resend**). Prisma schema + **`db:push` / migrations** toward Railway Postgres. Tranquil tokens in **`globals.css`**. **Today** + **Notes** + **Chat FAB** shells. **Outstanding:** DNS + production deploy (**Railway**), optional full **shadcn** install, stakeholder device smoke tests, **commit → push**.
+Repo + Next.js **16** + TS strict + Tailwind **4** scaffold (**landed — see § Current repository snapshot**). **Clerk** sign-in/up + **`~/auth`** Prisma bridge; **Resend** for digest mail. Prisma schema + **`db:push` / migrations** toward Railway Postgres. Tranquil tokens in **`globals.css`**. **Today** + **Notes** + **Chat FAB** shells. **Outstanding:** DNS + production deploy (**Railway**), optional full **shadcn** install, stakeholder device smoke tests, **commit → push**.
 
 ### Week 2 — Notes core
 
@@ -324,14 +323,14 @@ Legend: ✅ done in repo 🔲 still to do ⏭ usually later week
 |------|--------|
 | ✅ | Repo + Next 16 App Router + TS strict + Turbopack `dev`; Tailwind **4** |
 | ✅ | **`prisma/schema.prisma`** (full forward-looking model) |
-| ✅ | Auth.js (`next-auth` **beta.31**) Resend magic link scaffold + **`src/app`** sign-in UX |
-| ✅ | Middleware + **`/api/auth/[...nextauth]`** routes |
+| ✅ | Clerk (`@clerk/nextjs`) + **`~/auth`** Prisma bridge + **`src/app`** **`/signin`** / **`/signup`** |
+| ✅ | Middleware (**`clerkMiddleware`**) + public-route exceptions (cron, heirloom, recitation) |
 | ✅ | Tranquil **design tokens** in **`globals.css`**; **Today** / **Notes** / chat FAB stubs |
 | ✅ | **`PushToTalk`** client capture (**Phase 2** wires R2 + STT) |
 | ✅ | Python **Collections** toolchain under **`seeds/`** (coordinates with **§ Phase 0** below) |
 | 🔲 | Optional: register custom domain → DNS → Railway web service (otherwise use **`*.up.railway.app`**) |
 | 🔲 | **Railway** Postgres (**`DATABASE_URL`**) run **`npm run db:push`** or **`db:migrate`** |
-| 🔲 | **Resend** keys + **`AUTH_SECRET`** + **`NEXTAUTH_URL`** verified end-to-end sign-in |
+| 🔲 | Clerk keys + Clerk **Domains** + **`NEXTAUTH_URL`** verified end-to-end sign-in; **`prisma db push`** ( **`clerkUserId`** column ) on prod DB |
 | 🔲 | **Railway** env parity; redeploy smoke |
 | ⏭ | **Railway Redis** / worker service (Week **2**) |
 | ⏭ | **R2** bucket + keys (Week **2**) |

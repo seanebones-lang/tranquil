@@ -1,47 +1,80 @@
-import NextAuth from "next-auth";
-import Resend from "next-auth/providers/resend";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import authConfig from "~/auth.config";
+/**
+ * Clerk-backed session bridge for the rest of the app.
+ *
+ * Exposes `auth()` with the same shape the codebase expected from Auth.js:
+ * `{ user: { id, name, email } } | null` where `id` is the Prisma `User.id`.
+ */
+import { auth as clerkAuth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
-  // trustHost + middleware callbacks live on auth.config — merge them here so
-  // route handlers match middleware behavior in production (e.g. Railway).
-  ...authConfig,
-  providers: [
-    Resend({
-      apiKey: process.env.AUTH_RESEND_KEY ?? "",
-      from: process.env.EMAIL_FROM ?? (process.env.NODE_ENV === "production"
-        ? (() => { throw new Error("EMAIL_FROM not set in production"); })()
-        : "onboarding@resend.dev"),
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
+function clerkFallbackEmail(clerkUserId: string): string {
+  const safe = clerkUserId.replace(/[^a-zA-Z0-9]/g, "_");
+  return `${safe}@users.clerk`;
+}
+
+export async function auth(): Promise<{
+  user: { id: string; name: string | null; email: string };
+} | null> {
+  const { userId } = await clerkAuth();
+  if (!userId) return null;
+
+  const cu = await currentUser();
+  const email =
+    cu?.primaryEmailAddress?.emailAddress ?? clerkFallbackEmail(userId);
+  const name =
+    cu?.fullName ??
+    cu?.username ??
+    cu?.primaryEmailAddress?.emailAddress ??
+    null;
+  const image = cu?.imageUrl ?? null;
+
+  let user = await prisma.user.findFirst({
+    where: { clerkUserId: userId },
+  });
+
+  if (!user) {
+    const byEmail = await prisma.user.findUnique({ where: { email } });
+    if (byEmail) {
+      user = await prisma.user.update({
+        where: { id: byEmail.id },
+        data: {
+          clerkUserId: userId,
+          name: name ?? byEmail.name,
+          image: image ?? byEmail.image,
+        },
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          clerkUserId: userId,
+          email,
+          name,
+          image,
+        },
+      });
+    }
+  } else {
+    const data: {
+      email?: string;
+      name?: string | null;
+      image?: string | null;
+    } = {};
+    if (user.email !== email) data.email = email;
+    if (user.name !== name) data.name = name;
+    if (user.image !== image) data.image = image;
+    if (Object.keys(data).length > 0) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data,
+      });
+    }
+  }
+
+  return {
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
     },
-    async session({ session, token }) {
-      if (token?.id && session.user) {
-        session.user.id = token.id as string;
-      }
-      return session;
-    },
-  },
-  // pages defined once in authConfig — don't re-declare here to avoid ambiguity
-  events: {
-    async signIn({ user }) {
-      // Stamp lastSeenAt for heirloom dormancy detection
-      if (user.id) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastSeenAt: new Date() },
-        });
-      }
-    },
-  },
-});
+  };
+}

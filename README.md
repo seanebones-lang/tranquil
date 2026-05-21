@@ -30,7 +30,7 @@ Use Railway’s **`*.up.railway.app`** URL for deploy/test until you attach a cu
 
 | Area | What’s in the repo |
 |------|---------------------|
-| **Auth** | Email magic links via Auth.js v5 + Resend (no passwords). |
+| **Auth** | Clerk (email/password + OAuth per Clerk dashboard); **`~/auth`** syncs Clerk users into Prisma. |
 | **Today** | Greeting, recent notes, daily reflection (DB-backed when cron has run), push-to-talk capture, chat FAB. |
 | **Notes** | List, create, edit with autosave-oriented actions, related-notes panel, slash-command helpers, heirloom visibility toggle in chrome. |
 | **Research & Library** | RAG-backed research flows and library browsing (requires seeded Collections + `XAI_API_KEY`). |
@@ -52,7 +52,7 @@ Export today is **Markdown** (`text/markdown`); PDF is left as a follow-on (see 
 | Framework | Next.js 16 (App Router, RSC), Turbopack in dev |
 | Language | TypeScript (strict) |
 | UI | Tailwind 4 (`@theme` tokens), minimal hand-rolled UI primitives |
-| Auth | Auth.js v5 (`next-auth` **5.0.0-beta.31**), JWT sessions, Prisma adapter |
+| Auth | Clerk (`@clerk/nextjs`); Prisma `User.clerkUserId` links accounts |
 | Database | PostgreSQL + Prisma 6 |
 | Cache / queues | Redis + BullMQ (`ioredis`) |
 | Object storage | Cloudflare R2 (S3 API, `@aws-sdk/*`) |
@@ -63,8 +63,8 @@ Export today is **Markdown** (`text/markdown`); PDF is left as a follow-on (see 
 ## Repository layout
 
 ```
-├── auth.ts / auth.config.ts   # Auth.js (Node) vs Edge-safe middleware config
-├── middleware.ts              # NextAuth middleware + matcher
+├── auth.ts                    # Clerk → Prisma user bridge (import as ~/auth)
+├── middleware.ts              # Clerk middleware + public-route exceptions (cron, heirloom export)
 ├── prisma/schema.prisma       # Canonical schema (users, notes, chat, heirloom, audit, …)
 ├── vercel.json                # Reference cron paths/schedules (trigger via Railway Cron or similar)
 ├── worker/                    # BullMQ worker entrypoint + jobs
@@ -73,7 +73,6 @@ Export today is **Markdown** (`text/markdown`); PDF is left as a follow-on (see 
 └── src/
     ├── app/                   # App Router pages + API routes
     │   ├── api/
-    │   │   ├── auth/[...nextauth]/
     │   │   ├── chat/
     │   │   ├── threads/ ...
     │   │   ├── export/
@@ -100,7 +99,7 @@ cd tranquil
 npm install          # or pnpm / yarn — triggers prisma generate (postinstall)
 
 cp .env.example .env
-# Edit .env — minimum: AUTH_SECRET, NEXTAUTH_URL, DATABASE_URL, AUTH_RESEND_KEY, EMAIL_FROM
+# Edit .env — minimum: Clerk keys, NEXTAUTH_URL, DATABASE_URL (see `.env.example`)
 
 npm run db:push      # or: npm run db:migrate — applies Prisma schema to Postgres
 
@@ -165,8 +164,9 @@ Copy **[`.env.example`](./.env.example)** to `.env`. Summary:
 
 | Variable | Required for | Notes |
 |----------|----------------|-------|
-| `AUTH_SECRET` | Auth | `openssl rand -base64 32` |
-| `NEXTAUTH_URL` | Auth | Must match the browser URL exactly (no trailing slash): local **`http://localhost:3000`** or Railway **`https://…up.railway.app`** |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk | Dashboard → API Keys |
+| `CLERK_SECRET_KEY` | Clerk | Server secret |
+| `NEXTAUTH_URL` | App links | Same as public site URL (digest/cron fallbacks); no trailing slash |
 | `DATABASE_URL` | App | Postgres connection string |
 | `AUTH_RESEND_KEY` | Magic links + app email | Resend API key |
 | `EMAIL_FROM` | Outbound mail | Dev: `onboarding@resend.dev`; prod: verified domain |
@@ -198,29 +198,18 @@ Seeds use a separate **[`seeds/.env.example`](./seeds/.env.example)** — keep u
 
 ## Authentication & middleware
 
-- **`auth.ts`** (root): full Auth.js config with Prisma + providers — import as **`~/auth`**.
-- **`auth.config.ts`**: Edge-safe fragment consumed by **`middleware.ts`**.
-- **`middleware.ts`** matcher skips static assets and **`/api/auth/*`** only.
+- **Clerk** handles sign-in and sign-up at **`/signin`** and **`/signup`** (also Clerk-hosted **`/sign-in`** / **`/sign-up`** paths are allowed).
+- **`auth.ts`** (repo root, import **`~/auth`**): bridges Clerk **`currentUser()`** to Prisma **`User`** — creates users or links **`clerkUserId`** so **`session.user.id`** stays your DB primary key.
+- **`middleware.ts`**: **`clerkMiddleware`** + **`auth.protect()`** for protected routes; static assets and Clerk internals are skipped via matcher.
 
-**Important:** Several flows must reach the server **without** a logged-in session:
+**Important:** These flows must reach the server **without** a Clerk session (middleware allows them explicitly):
 
 - **`/heirloom-access`** — heirs redeeming magic links  
 - **`/api/cron/*`** — scheduled HTTP jobs (validated via `CRON_SECRET`)  
 - **`/api/export?heirloomToken=...`** — heirloom markdown export  
+- **`/api/recitation`** — public recitation endpoint  
 
-Ensure `callbacks.authorized` in **`auth.config.ts`** returns `true` for those paths before enforcing `isLoggedIn`. Example pattern:
-
-```ts
-// Inside callbacks.authorized — illustrative; keep sign-in redirect logic intact.
-const path = nextUrl.pathname;
-
-if (path.startsWith("/heirloom-access")) return true;
-if (path.startsWith("/api/cron")) return true;
-if (path.startsWith("/api/export") && nextUrl.searchParams.has("heirloomToken"))
-  return true;
-
-// …then existing /signin handling and `return isLoggedIn` for everything else.
-```
+When adding new public routes, update **`middleware.ts`** so they are not blocked by **`auth.protect()`**.
 
 ---
 
@@ -239,7 +228,7 @@ if (path.startsWith("/api/export") && nextUrl.searchParams.has("heirloomToken"))
 - `railway.json` configures Nixpacks build + separate `web` (Next.js) and `worker` (BullMQ) services
 - `npm ci && npm run build` (with `postinstall: prisma generate`)
 - Web starts with `npm start`, worker with `npm run worker`
-- All env vars (`DATABASE_URL`, `REDIS_URL`, `XAI_API_KEY`, `AUTH_RESEND_KEY`, `AUTH_SECRET`, `NEXTAUTH_URL`, `CRON_SECRET`, R2 credentials, etc.) must be set in Railway
+- All env vars (`DATABASE_URL`, `REDIS_URL`, `XAI_API_KEY`, Clerk keys, `NEXTAUTH_URL`, `AUTH_RESEND_KEY`, `EMAIL_FROM`, `CRON_SECRET`, R2 credentials, etc.) must be set in Railway
 
 Push to main = instant redeploy.
 
@@ -254,10 +243,10 @@ Production domains must be **verified** in Resend; update `EMAIL_FROM` according
 ### Public URL (Railway — test / default domain)
 
 1. In Railway → **web** → **Networking → Generate domain** (or use the existing **`*.up.railway.app`** URL).
-2. Set **`NEXTAUTH_URL`** (and **`AUTH_URL`** if you use it) on the **web** service to **`https://YOUR_APP.up.railway.app`** exactly — **no trailing slash**.
-3. Remove **custom domains** from Railway when you’re not using them so Auth.js and callbacks aren’t tied to stale hostnames.
+2. Set **`NEXTAUTH_URL`** on the **web** service to **`https://YOUR_APP.up.railway.app`** exactly — **no trailing slash** (used for digest links and other server-generated URLs).
+3. In **Clerk** → **Domains**, add the same public host (Railway domain or custom) so redirect URLs stay valid.
 
-Optional later: attach your own domain again and point **`NEXTAUTH_URL`** at that canonical HTTPS URL.
+Optional later: attach your own domain again; update **Clerk allowed origins** and **`NEXTAUTH_URL`** to that canonical HTTPS URL.
 
 ---
 
@@ -273,6 +262,7 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 
 | Symptom | Check |
 |---------|--------|
+| Sign-in blank / Clerk “hostname” errors | **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** / **`CLERK_SECRET_KEY`** set on Railway; Clerk **Domains** includes your Railway URL; redeploy after env changes. |
 | Redirect loop or 401 on cron | `CRON_SECRET` matches `Authorization` header; middleware allows `/api/cron/*`. |
 | Heirloom page / export 403 or blocked | Middleware allows `/heirloom-access` and `/api/export?heirloomToken=…`; grant not revoked/expired. |
 | Research / agent scripture errors | Phase 0 complete; `QURAN_*` / `HADITH_*` / `TAFSIR_*` IDs + `XAI_API_KEY` set. |

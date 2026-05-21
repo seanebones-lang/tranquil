@@ -1,3 +1,176 @@
+@import "tailwindcss";
+
+/* =========================================================
+   A Tranquil Space — design tokens
+   ========================================================= */
+@theme {
+  /* Palette */
+  --color-paper: #faf7f2;        /* warm parchment - page bg */
+  --color-surface: #f2ede4;      /* ivory - card bg */
+  --color-surface-strong: #e9e2d4;
+  --color-ink: #2c2825;          /* warm charcoal - text */
+  --color-muted: #6b665f;        /* secondary text */
+  --color-whisper: #a39e95;      /* tertiary text / hints */
+
+  --color-sage: #7c9885;         /* primary */
+  --color-sage-deep: #5e7c69;
+  --color-sage-soft: #c3d2c6;
+
+  --color-dusk: #5b7b9a;         /* accent / links */
+  --color-dusk-soft: #b8c8d6;
+
+  --color-citation: #b8956a;     /* gold - verse blocks */
+  --color-citation-soft: #e6d4ba;
+
+  --color-danger: #a3553f;
+
+  /* Dark mode counterparts (used via prefers-color-scheme) */
+  --color-paper-dark: #1a1f26;
+  --color-surface-dark: #232931;
+  --color-ink-dark: #e8e1d5;
+  --color-muted-dark: #a39e95;
+
+  /* Typography */
+  --font-display: "Cormorant Garamond", "Georgia", serif;
+  --font-body: "Cormorant Garamond", "Georgia", serif;
+  --font-ui: "Inter", system-ui, sans-serif;
+  --font-arabic: "Amiri", "Scheherazade New", serif;
+
+  /* Radii */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+
+  /* Shadows — single soft layer, no harsh elevation */
+  --shadow-soft: 0 1px 2px rgba(44, 40, 37, 0.04),
+                 0 4px 16px rgba(44, 40, 37, 0.06);
+  --shadow-lifted: 0 2px 4px rgba(44, 40, 37, 0.06),
+                   0 12px 32px rgba(44, 40, 37, 0.08);
+
+  /* Motion — slow easings only */
+  --ease-tranquil: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --duration-fade: 300ms;
+}
+
+/* =========================================================
+   Base
+   ========================================================= */
+html {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-size: 1.0625rem;     /* 17px - readable serif body */
+  line-height: 1.7;
+  letter-spacing: 0.005em;
+  min-height: 100dvh;
+}
+
+/* Honor user font scale preference */
+html[data-font-scale="1.1"]  { font-size: 110%; }
+html[data-font-scale="1.25"] { font-size: 125%; }
+html[data-font-scale="1.4"]  { font-size: 140%; }
+
+/* Honor reduced motion at the root */
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Headings — refined display serif */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+/* UI chrome (buttons, labels) uses Inter */
+button, label, input, select, textarea, .ui {
+  font-family: var(--font-ui);
+}
+
+/* Arabic */
+.arabic, [lang="ar"] {
+  font-family: var(--font-arabic);
+  font-size: 1.35em;
+  line-height: 2;
+  direction: rtl;
+}
+
+/* Links */
+a {
+  color: var(--color-dusk);
+  text-decoration: none;
+  transition: color var(--duration-fade) var(--ease-tranquil);
+}
+a:hover { color: var(--color-sage-deep); }
+
+/* Selection */
+::selection {
+  background: var(--color-sage-soft);
+  color: var(--color-ink);
+}
+
+/* Subtle paper texture overlay - very low opacity */
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+
+/* Gentle breath pulse for the push-to-talk button while recording */
+@keyframes breath {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(124, 152, 133, 0.35),
+                var(--shadow-lifted);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 18px rgba(124, 152, 133, 0),
+                var(--shadow-lifted);
+    transform: scale(1.02);
+  }
+}
+
+.recording-pulse {
+  animation: breath 1.6s var(--ease-tranquil) infinite;
+}
+
+/* Dark mode - full token remapping inside @media so all var() calls respect OS preference */
+@media (prefers-color-scheme: dark) {
+  html {
+    --color-paper: var(--color-paper-dark);
+    --color-surface: var(--color-surface-dark);
+    --color-ink: var(--color-ink-dark);
+    --color-muted: var(--color-muted-dark);
+    background: var(--color-paper-dark);
+    color: var(--color-ink-dark);
+  }
+  ::selection {
+    background: var(--color-sage-deep);
+    color: var(--color-ink-dark);
+  }
+}
+
 /* Khalwa mode fade-in (cross-dissolve on enter instead of snap) */
 @keyframes khalwaEnter {
   from {

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Cormorant_Garamond, Inter, Amiri } from "next/font/google";
 import { auth } from "~/auth";
 import { prisma } from "@/lib/db";
@@ -43,15 +44,13 @@ export const viewport: Viewport = {
   maximumScale: 5,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#faf7f2" },
-    { media: "(prefers-color-scheme: dark)",  color: "#1a1f26" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1f26" },
   ],
 };
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Read user preferences on the server so SSR matches what the user expects.
-  // Skip the DB round-trip entirely when there's no session (public pages).
   let fontScale = 1.0;
   let reducedMotion = false;
   let contrast: "standard" | "high" = "standard";
@@ -74,14 +73,20 @@ export default async function RootLayout({
   }
 
   return (
-    <html
-      lang="en"
-      className={`${cormorant.variable} ${inter.variable} ${amiri.variable}`}
-      data-font-scale={fontScale.toString()}
-      data-reduced-motion={reducedMotion.toString()}
-      data-contrast={contrast}
+    <ClerkProvider
+      signInUrl="/signin"
+      signUpUrl="/signup"
+      afterSignOutUrl="/signin"
     >
-      <body>{children}</body>
-    </html>
+      <html
+        lang="en"
+        className={`${cormorant.variable} ${inter.variable} ${amiri.variable}`}
+        data-font-scale={fontScale.toString()}
+        data-reduced-motion={reducedMotion.toString()}
+        data-contrast={contrast}
+      >
+        <body>{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }

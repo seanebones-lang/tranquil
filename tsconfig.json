@@ -28,9 +28,6 @@
       ],
       "~/auth": [
         "./auth"
-      ],
-      "~/auth.config": [
-        "./auth.config"
       ]
     }
   },
@@ -39,7 +36,6 @@
     "**/*.ts",
     "**/*.tsx",
     "auth.ts",
-    "auth.config.ts",
     "middleware.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"

@@ -24,6 +24,9 @@ model User {
   name          String?
   image         String?
 
+  /// Clerk user id (`user_…`) — primary login once Clerk is enabled
+  clerkUserId   String?   @unique
+
   // App-specific
   role                       String    @default("owner") // owner | heirloom
   heirloomContactEmail       String?

@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import { signOut } from "~/auth";
+import { SignOutButton } from "@clerk/nextjs";
 
 export function Nav({ userName }: { userName?: string | null }) {
   return (
@@ -32,19 +34,14 @@ export function Nav({ userName }: { userName?: string | null }) {
             {userName}
           </span>
         )}
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/signin" });
-          }}
-        >
+        <SignOutButton signOutOptions={{ redirectUrl: "/signin" }}>
           <button
-            type="submit"
+            type="button"
             className="text-[var(--color-muted)] hover:text-[var(--color-ink)]"
           >
             Sign out
           </button>
-        </form>
+        </SignOutButton>
       </div>
     </nav>
   );

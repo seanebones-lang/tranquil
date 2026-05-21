@@ -27,6 +27,12 @@ type DeleteState = "idle" | "confirm";
 
 const AUTOSAVE_DEBOUNCE_MS = 800;
 
+function wordCount(text: string): number {
+  const t = text.trim();
+  if (!t) return 0;
+  return t.split(/\s+/).filter(Boolean).length;
+}
+
 export function NoteEditor(props: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("write");
