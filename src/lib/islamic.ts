@@ -12,6 +12,26 @@
  */
 import { searchCollections, type SearchHit } from "./collections";
 
+/** True when Grok Collections search can run (Phase 0 IDs + real xAI key). */
+export function isIslamicResearchConfigured(): boolean {
+  const raw = process.env.XAI_API_KEY?.trim() ?? "";
+  if (!raw || isPlaceholderXaiKey(raw)) return false;
+  const quran = process.env.QURAN_COLLECTION_ID?.trim();
+  const hadith = process.env.HADITH_COLLECTION_ID?.trim();
+  const tafsir = process.env.TAFSIR_COLLECTION_ID?.trim();
+  return Boolean(quran && hadith && tafsir);
+}
+
+function isPlaceholderXaiKey(v: string): boolean {
+  const n = v.toLowerCase();
+  return (
+    n === "your_xai_key_here" ||
+    n === "your-api-key" ||
+    n.startsWith("replace_") ||
+    n === "xxx"
+  );
+}
+
 export type QuranCitation = {
   kind: "quran";
   reference: string;        // "2:255"

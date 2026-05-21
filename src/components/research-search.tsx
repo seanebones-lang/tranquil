@@ -10,7 +10,12 @@ import { Card } from "@/components/ui/card";
 import { VerseCard, HadithCard, TafsirCard } from "@/components/citation-cards";
 import { VerseModal } from "@/components/verse-modal";
 
-export function ResearchSearch() {
+export function ResearchSearch({
+  researchReady = true,
+}: {
+  /** False when xAI key + Phase 0 collection IDs are missing from env. */
+  researchReady?: boolean;
+}) {
   const [q, setQ] = useState("");
   const [answer, setAnswer] = useState<ResearchAnswer | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,10 +51,22 @@ export function ResearchSearch() {
           placeholder="What does the Quran say about patience in hardship?"
           autoFocus
         />
-        <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={pending}>
+        <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={pending || !researchReady}>
           {pending ? "Searching the sources…" : "Search"}
         </Button>
       </form>
+
+      {!researchReady && (
+        <Card className="mb-10 border-l-2 border-[var(--color-dusk)] bg-[var(--color-surface-strong)]">
+          <p className="text-sm leading-relaxed text-[var(--color-muted)] font-[var(--font-ui)]">
+            Research needs an xAI API key and three Grok Collection IDs in{" "}
+            <span className="text-[var(--color-ink)]">.env.local</span>{" "}
+            (QURAN_COLLECTION_ID, HADITH_COLLECTION_ID, TAFSIR_COLLECTION_ID). Seed the corpora with the Python scripts in{" "}
+            <span className="text-[var(--color-ink)]">seeds/</span>{" "}
+            and follow <span className="text-[var(--color-ink)]">seeds/README.md</span>.
+          </p>
+        </Card>
+      )}
 
       {error && (
         <Card className="border-l-2 border-[var(--color-danger)]">

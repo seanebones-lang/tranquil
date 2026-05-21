@@ -1,4 +1,5 @@
 import { auth } from "~/auth";
+import { isIslamicResearchConfigured } from "@/lib/islamic";
 import { Nav } from "@/components/nav";
 import { ChatWidgetFab } from "@/components/chat-widget-fab";
 import { ResearchSearch } from "@/components/research-search";
@@ -7,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ResearchPage() {
   const session = await auth();
+  const researchReady = isIslamicResearchConfigured();
   return (
     <>
       <Nav userName={session?.user?.name} />
@@ -23,7 +25,7 @@ export default async function ResearchPage() {
           </p>
         </header>
 
-        <ResearchSearch />
+        <ResearchSearch researchReady={researchReady} />
       </main>
       <ChatWidgetFab />
     </>

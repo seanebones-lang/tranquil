@@ -6,6 +6,7 @@ import {
   searchQuran,
   searchHadith,
   searchTafsir,
+  isIslamicResearchConfigured,
   type QuranCitation,
   type HadithCitation,
   type TafsirCitation,
@@ -78,6 +79,17 @@ Hard rules:
 export async function answerWithCitations(
   question: string,
 ): Promise<ResearchAnswer> {
+  if (!isIslamicResearchConfigured()) {
+    return {
+      prose:
+        "Research isn’t connected here yet. Add XAI_API_KEY and " +
+        "QURAN_COLLECTION_ID, HADITH_COLLECTION_ID, and TAFSIR_COLLECTION_ID to .env.local " +
+        "(Phase 0 corpus upload — see seeds/README.md in the repo). Until then this page can’t query the Grok collections.",
+      citations: [],
+      refused: true,
+    };
+  }
+
   // 1. Retrieve from all three Collections in parallel
   const [quran, hadith, tafsir] = await Promise.all([
     searchQuran(question,  5).catch(() => []),
@@ -95,7 +107,8 @@ export async function answerWithCitations(
     return {
       prose:
         "I couldn't find sources for that in the Quran, the Sahih Sittah, or " +
-        "Tafsir Ibn Kathir. Try rephrasing — sometimes a different keyword helps.",
+        "Tafsir Ibn Kathir. Try rephrasing — sometimes a different keyword helps." +
+        queryTypoHint(question),
       citations: [],
       refused: true,
     };
@@ -155,6 +168,14 @@ async function composeAnswer(
     temperature: 0.2,
   });
   return object;
+}
+
+/** Light-touch hints when the query wording likely blocks retrieval. */
+function queryTypoHint(question: string): string {
+  if (/\bquorum\b/i.test(question)) {
+    return " If you meant the Quran, try that spelling — “quorum” is a different word.";
+  }
+  return "";
 }
 
 function filterCitations(
