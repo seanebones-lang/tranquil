@@ -5,12 +5,14 @@ import { Nav } from "@/components/nav";
 import { PushToTalk } from "@/components/push-to-talk";
 import { ChatWidgetFab } from "@/components/chat-widget-fab";
 import { Card } from "@/components/ui/card";
+import { isR2Configured } from "@/lib/r2";
 import { firstName, timeOfDayGreeting } from "@/lib/utils";
 import { format } from "date-fns";
 
 export default async function TodayPage() {
   const session = await auth();
   const userId = session?.user?.id;
+  const voiceUploadsEnabled = isR2Configured();
 
   if (userId) {
     await prisma.user
@@ -69,7 +71,7 @@ export default async function TodayPage() {
           <p className="mb-10 text-[var(--color-muted)] text-lg italic">
             What's on your mind?
           </p>
-          <PushToTalk />
+          <PushToTalk uploadsEnabled={voiceUploadsEnabled} />
           <p className="mt-6 text-xs font-[var(--font-ui)] text-[var(--color-whisper)] uppercase tracking-[0.15em]">
             or tap below to write
           </p>

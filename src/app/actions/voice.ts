@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { auth } from "~/auth";
 import { prisma } from "@/lib/db";
-import { audioKey, signedUploadUrl } from "@/lib/r2";
+import { audioKey, isR2Configured, signedUploadUrl } from "@/lib/r2";
 import { transcribeQueue, QUEUES } from "@/lib/queue";
 
 async function requireUserId(): Promise<string> {
@@ -27,6 +27,12 @@ export async function prepareVoiceNoteUpload(
 ) {
   const userId = await requireUserId();
   const { mimeType, durationSec } = prepareSchema.parse(input);
+
+  if (!isR2Configured()) {
+    throw new Error(
+      "Voice uploads need Cloudflare R2. Add R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY to .env.local — or tap “Open a blank page” to write instead.",
+    );
+  }
 
   const note = await prisma.note.create({
     data: {

@@ -9,9 +9,14 @@ export const R2_BUCKET = process.env.R2_BUCKET ?? "tranquil-audio";
 
 let _client: S3Client | null = null;
 
+/** True when env has all vars required for voice upload / playback from R2. */
+export function isR2Configured(): boolean {
+  return Boolean(accountId && accessKeyId && secretAccessKey);
+}
+
 export function r2(): S3Client {
   if (_client) return _client;
-  if (!accountId || !accessKeyId || !secretAccessKey) {
+  if (!isR2Configured()) {
     throw new Error(
       "R2 not configured. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY.",
     );
@@ -19,7 +24,10 @@ export function r2(): S3Client {
   _client = new S3Client({
     region: "auto",
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: { accessKeyId, secretAccessKey },
+    credentials: {
+      accessKeyId: accessKeyId!,
+      secretAccessKey: secretAccessKey!,
+    },
   });
   return _client;
 }

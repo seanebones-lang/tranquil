@@ -15,7 +15,12 @@ type RecordingState =
   | "uploading"
   | "error";
 
-export function PushToTalk() {
+export function PushToTalk({
+  uploadsEnabled = true,
+}: {
+  /** When false, R2 is not configured — show a muted hint instead of failing after record. */
+  uploadsEnabled?: boolean;
+}) {
   const router = useRouter();
   const [state, setState] = useState<RecordingState>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -61,6 +66,7 @@ export function PushToTalk() {
   );
 
   const start = useCallback(async () => {
+    if (!uploadsEnabled) return;
     if (state !== "idle") return;
     setErrorMsg(null);
     setState("requesting");
@@ -107,7 +113,7 @@ export function PushToTalk() {
       stopStream();
       setTimeout(() => setState("idle"), 2500);
     }
-  }, [state, stopStream, handleUpload]);
+  }, [state, stopStream, handleUpload, uploadsEnabled]);
 
   const stop = useCallback(() => {
     if (state !== "recording") return;
@@ -115,6 +121,8 @@ export function PushToTalk() {
   }, [state]);
 
   useEffect(() => {
+    if (!uploadsEnabled) return;
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code !== "Space" || e.repeat) return;
       if (
@@ -139,11 +147,14 @@ export function PushToTalk() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [start, stop]);
+  }, [start, stop, uploadsEnabled]);
 
   useEffect(() => stopStream, [stopStream]);
 
   const label = (() => {
+    if (!uploadsEnabled && state === "idle") {
+      return "Voice needs R2 in .env.local — use Write below.";
+    }
     switch (state) {
       case "idle":       return "Hold to speak";
       case "requesting": return "Listening…";
@@ -157,9 +168,13 @@ export function PushToTalk() {
     <div className="flex flex-col items-center gap-6">
       <button
         type="button"
-        aria-label="Hold to speak — release when done"
+        aria-label={
+          uploadsEnabled
+            ? "Hold to speak — release when done"
+            : "Voice capture unavailable — Cloudflare R2 not configured"
+        }
         aria-pressed={state === "recording"}
-        disabled={state === "uploading"}
+        disabled={state === "uploading" || !uploadsEnabled}
         onPointerDown={(e) => {
           (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
           void start();
@@ -182,7 +197,7 @@ export function PushToTalk() {
           "transition-all duration-[var(--duration-fade)] ease-[var(--ease-tranquil)]",
           "shadow-[var(--shadow-lifted)]",
           "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--color-sage)]/30",
-          "disabled:opacity-70 disabled:cursor-wait",
+          "disabled:opacity-70 disabled:cursor-not-allowed",
           state === "recording"
             ? "bg-[var(--color-sage)] recording-pulse"
             : state === "error"
@@ -197,7 +212,9 @@ export function PushToTalk() {
             "w-12 h-12 transition-colors",
             state === "recording" || state === "error"
               ? "text-white"
-              : "text-[var(--color-sage-deep)]",
+              : !uploadsEnabled && state === "idle"
+                ? "text-[var(--color-whisper)]"
+                : "text-[var(--color-sage-deep)]",
           )}
         />
       </button>
@@ -206,7 +223,9 @@ export function PushToTalk() {
           "text-sm font-[var(--font-ui)] tracking-wide",
           state === "error"
             ? "text-[var(--color-danger)]"
-            : "text-[var(--color-muted)]",
+            : !uploadsEnabled
+              ? "text-[var(--color-whisper)]"
+              : "text-[var(--color-muted)]",
         )}
         aria-live="polite"
       >
