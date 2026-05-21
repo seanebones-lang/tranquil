@@ -329,7 +329,7 @@ Legend: ✅ done in repo 🔲 still to do ⏭ usually later week
 | ✅ | Tranquil **design tokens** in **`globals.css`**; **Today** / **Notes** / chat FAB stubs |
 | ✅ | **`PushToTalk`** client capture (**Phase 2** wires R2 + STT) |
 | ✅ | Python **Collections** toolchain under **`seeds/`** (coordinates with **§ Phase 0** below) |
-| 🔲 | Register domain (**`bizbot.store`** or final hostname) → DNS → Railway web service |
+| 🔲 | Optional: register custom domain → DNS → Railway web service (otherwise use **`*.up.railway.app`**) |
 | 🔲 | **Railway** Postgres (**`DATABASE_URL`**) run **`npm run db:push`** or **`db:migrate`** |
 | 🔲 | **Resend** keys + **`AUTH_SECRET`** + **`NEXTAUTH_URL`** verified end-to-end sign-in |
 | 🔲 | **Railway** env parity; redeploy smoke |

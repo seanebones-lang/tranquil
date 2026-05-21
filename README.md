@@ -2,7 +2,9 @@
 
 A calm, scripture-grounded journaling app: magic-link auth, notes with voice capture hooks, Islamic research (Quran / Hadith / Tafsir via Grok Collections), a floating Grok agent with tools, heirloom sharing, accessibility-focused settings, and background jobs (STT, queues, scheduled digests and reflections).
 
-**License:** [MIT](./LICENSE) · **Node:** ≥ 20 · **Live:** https://bizbot.store · **Docs:** [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md) (architecture & phased plan), [`docs/README.md`](./docs/README.md) (doc index), [`docs/TODO_100_OF_100.md`](./docs/TODO_100_OF_100.md) (shipping checklist), [`seeds/README.md`](./seeds/README.md) (Phase 0 corpus upload).
+**License:** [MIT](./LICENSE) · **Node:** ≥ 20 · **Docs:** [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md) (architecture & phased plan), [`docs/README.md`](./docs/README.md) (doc index), [`docs/TODO_100_OF_100.md`](./docs/TODO_100_OF_100.md) (shipping checklist), [`seeds/README.md`](./seeds/README.md) (Phase 0 corpus upload).
+
+Use Railway’s **`*.up.railway.app`** URL for deploy/test until you attach a custom domain.
 
 ---
 
@@ -164,7 +166,7 @@ Copy **[`.env.example`](./.env.example)** to `.env`. Summary:
 | Variable | Required for | Notes |
 |----------|----------------|-------|
 | `AUTH_SECRET` | Auth | `openssl rand -base64 32` |
-| `NEXTAUTH_URL` | Auth | Public URL, no trailing slash (production: **`https://bizbot.store`**) |
+| `NEXTAUTH_URL` | Auth | Must match the browser URL exactly (no trailing slash): local **`http://localhost:3000`** or Railway **`https://…up.railway.app`** |
 | `DATABASE_URL` | App | Postgres connection string |
 | `AUTH_RESEND_KEY` | Magic links + app email | Resend API key |
 | `EMAIL_FROM` | Outbound mail | Dev: `onboarding@resend.dev`; prod: verified domain |
@@ -249,9 +251,13 @@ Deploy **`npm run worker`** as a separate process with the same `DATABASE_URL`, 
 
 Production domains must be **verified** in Resend; update `EMAIL_FROM` accordingly.
 
-### Custom domain (bizbot.store)
+### Public URL (Railway — test / default domain)
 
-Point DNS at Railway’s target for the **web** service and set **`NEXTAUTH_URL`** / **`AUTH_URL`** to **`https://bizbot.store`** (no trailing slash) on Railway.
+1. In Railway → **web** → **Networking → Generate domain** (or use the existing **`*.up.railway.app`** URL).
+2. Set **`NEXTAUTH_URL`** (and **`AUTH_URL`** if you use it) on the **web** service to **`https://YOUR_APP.up.railway.app`** exactly — **no trailing slash**.
+3. Remove **custom domains** from Railway when you’re not using them so Auth.js and callbacks aren’t tied to stale hostnames.
+
+Optional later: attach your own domain again and point **`NEXTAUTH_URL`** at that canonical HTTPS URL.
 
 ---
 
