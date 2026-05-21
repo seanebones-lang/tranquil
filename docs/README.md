@@ -1,11 +1,11 @@
 # Documentation
 
 | Document | Description |
-|---------|----------------|
-| [TODO_100_OF_100.md](./TODO_100_OF_100.md) | Checklist to reach **fully verified** integration (middleware, migrations, builds, seeds, worker, cron, smoke tests) |
-| [BUILD_PLAN.md](./BUILD_PLAN.md) | Master plan: architecture, phased weeks (1–6), AI/data/design, costing — plus **integrated repo snapshot** (Next auth/routes/components, Prisma, env splits, Week 1 done vs todo) |
-| [../seeds/README.md](../seeds/README.md) | Phase 0 — Grok Collections seed scripts (Quran/Hadith/Tafsir corpus upload) |
-| [phase4-files-4-bundle.md](./phase4-files-4-bundle.md) | README from **`Downloads/files-4`** (Islamic Research + Library + recitation route) |
-| [phase5-files-3-bundle.md](./phase5-files-3-bundle.md) | Snapshot README from **`Downloads/files-3`** (Phase 5 narrative; not all referenced files were in the zip) |
-| [phase5-files-5-bundle.md](./phase5-files-5-bundle.md) | README from **`Downloads/files-5`** (floating agent + `/api/chat`; text may overlap other Phase 5 notes) |
+|---------|-------------|
+| [MANUAL_PRODUCTION_CHECKLIST.md](./MANUAL_PRODUCTION_CHECKLIST.md) | **Operational punch list**: Railway Postgres/Redis/`web`+`worker`, Clerk, env matrix, smoke tests |
+| [PRISMA_MIGRATIONS.md](./PRISMA_MIGRATIONS.md) | **`npm run db:deploy`** vs **`db:push`**; baseline migration + existing DB caveat |
+| [TODO_100_OF_100.md](./TODO_100_OF_100.md) | Verify integration end-to-end (middleware, migrations, CI, seeds, worker, cron) |
+| [BUILD_PLAN.md](./BUILD_PLAN.md) | Architecture, phased roadmap, costing — snapshot of routes/components (**Clerk**, Prisma, env) |
+| [../seeds/README.md](../seeds/README.md) | Phase 0 — Grok Collections seed scripts |
 
+**Historical zips:** `phase*-bundle.md` READMEs describe partial exports; detail may lag current **Clerk** stack — verify against live code.

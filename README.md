@@ -1,8 +1,8 @@
 # A Tranquil Space
 
-A calm, scripture-grounded journaling app: magic-link auth, notes with voice capture hooks, Islamic research (Quran / Hadith / Tafsir via Grok Collections), a floating Grok agent with tools, heirloom sharing, accessibility-focused settings, and background jobs (STT, queues, scheduled digests and reflections).
+A calm, scripture-grounded journaling app: **Clerk** authentication, notes with voice capture hooks, Islamic research (Quran / Hadith / Tafsir via Grok Collections), a floating Grok agent with tools, heirloom sharing, accessibility-focused settings, and background jobs (STT, queues, scheduled digests and reflections).
 
-**License:** [MIT](./LICENSE) · **Node:** ≥ 20 · **Docs:** [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md) (architecture & phased plan), [`docs/README.md`](./docs/README.md) (doc index), [`docs/TODO_100_OF_100.md`](./docs/TODO_100_OF_100.md) (shipping checklist), [`seeds/README.md`](./seeds/README.md) (Phase 0 corpus upload).
+**License:** [MIT](./LICENSE) · **Node:** ≥ 20 · **Docs:** [`docs/MANUAL_PRODUCTION_CHECKLIST.md`](./docs/MANUAL_PRODUCTION_CHECKLIST.md) (Railway + env punch list), [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md) (architecture & phased plan), [`docs/README.md`](./docs/README.md) (doc index), [`docs/TODO_100_OF_100.md`](./docs/TODO_100_OF_100.md) (shipping checklist), [`seeds/README.md`](./seeds/README.md) (Phase 0 corpus upload).
 
 Use Railway’s **`*.up.railway.app`** URL for deploy/test until you attach a custom domain.
 
@@ -101,7 +101,9 @@ npm install          # or pnpm / yarn — triggers prisma generate (postinstall)
 cp .env.example .env
 # Edit .env — minimum: Clerk keys, NEXTAUTH_URL, DATABASE_URL (see `.env.example`)
 
-npm run db:push      # or: npm run db:migrate — applies Prisma schema to Postgres
+npm run db:migrate   # preferred locally: migrations history
+# or (prod / empty Railway DB):
+# DATABASE_URL='postgresql://…' npm run db:deploy
 
 npm run dev          # http://localhost:3000 — redirects to /signin until authenticated
 ```
@@ -126,7 +128,7 @@ Islamic lookup and agent tools expect **three Grok Collections** (Quran, Hadith,
 2. Copy the printed collection IDs into root `.env` as `QURAN_COLLECTION_ID`, `HADITH_COLLECTION_ID`, `TAFSIR_COLLECTION_ID`.
 3. Ensure `XAI_API_KEY` is set for both the Next app and (where needed) `seeds/.env`.
 
-Without Phase 0, research/agent scripture features will fail at runtime when those env vars are missing.
+Without Phase 0 env vars set, **`/research`** degrades gracefully; agent tools that call Collections may still fail or return empty until IDs exist.
 
 ---
 
@@ -168,7 +170,7 @@ Copy **[`.env.example`](./.env.example)** to `.env`. Summary:
 | `CLERK_SECRET_KEY` | Clerk | Server secret |
 | `NEXTAUTH_URL` | App links | Same as public site URL (digest/cron fallbacks); no trailing slash |
 | `DATABASE_URL` | App | Postgres connection string |
-| `AUTH_RESEND_KEY` | Magic links + app email | Resend API key |
+| `AUTH_RESEND_KEY` | Weekly digest / transactional mail | Resend API key (`src/lib/email.ts`) |
 | `EMAIL_FROM` | Outbound mail | Dev: `onboarding@resend.dev`; prod: verified domain |
 | `XAI_API_KEY` | AI / Collections | console.x.ai |
 | `QURAN_COLLECTION_ID` etc. | Research / slash / agent | After Phase 0 seeds |
@@ -188,9 +190,10 @@ Seeds use a separate **[`seeds/.env.example`](./seeds/.env.example)** — keep u
 | `npm run dev` | Next dev (Turbopack) |
 | `npm run build` | `prisma generate && next build` |
 | `npm run start` | Production server |
-| `npm run lint` | ESLint |
-| `npm run db:push` | Push schema (prototyping) |
-| `npm run db:migrate` | Migrations (preferred for prod) |
+| `npm run lint` | ESLint via root **`eslint.config.js`** (Next 16+ drops `next lint`) |
+| `npm run db:push` | Push schema (prototyping, no migration history) |
+| `npm run db:migrate` | **`prisma migrate dev`** — create/apply migrations locally |
+| `npm run db:deploy` | **`prisma migrate deploy`** — apply tracked migrations (prod/Railway) |
 | `npm run db:studio` | Prisma Studio |
 | `npm run worker` / `worker:dev` | Background worker |
 
@@ -204,7 +207,7 @@ Seeds use a separate **[`seeds/.env.example`](./seeds/.env.example)** — keep u
 
 **Important:** These flows must reach the server **without** a Clerk session (middleware allows them explicitly):
 
-- **`/heirloom-access`** — heirs redeeming magic links  
+- **`/heirloom-access`** — heirs redeeming heirloom invitations / links  
 - **`/api/cron/*`** — scheduled HTTP jobs (validated via `CRON_SECRET`)  
 - **`/api/export?heirloomToken=...`** — heirloom markdown export  
 - **`/api/recitation`** — public recitation endpoint  
@@ -217,8 +220,8 @@ When adding new public routes, update **`src/middleware.ts`** so they are not bl
 
 ### Database (e.g. Railway)
 
-1. Create PostgreSQL → copy `DATABASE_URL` into Railway (**web** + **worker** services).
-2. Run migrations (`npm run db:migrate`) or push schema per your policy.
+1. Create PostgreSQL → copy **`DATABASE_URL`** into Railway (**web** + **worker** services).
+2. Apply schema: **`npm run db:deploy`** (prod) once per environment, or **`npm run db:push`** for quick experiments — see **`docs/PRISMA_MIGRATIONS.md`**. Local ongoing changes: **`npm run db:migrate`**.
 
 ### Application (Railway - Production)
 
@@ -280,6 +283,7 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 |-----|----------|
 | [`docs/MANUAL_PRODUCTION_CHECKLIST.md`](./docs/MANUAL_PRODUCTION_CHECKLIST.md) | **Step-by-step** Railway / Clerk / Postgres / Redis / R2 / xAI / cron punch list |
 | [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md) | Full architecture, data model sketch, phased rollout, costing notes |
+| [`docs/PRISMA_MIGRATIONS.md`](./docs/PRISMA_MIGRATIONS.md) | **`db:deploy`** vs **`db:push`**; baseline migration notes |
 | [`docs/README.md`](./docs/README.md) | Index of bundle snapshots and pointers |
 | [`seeds/README.md`](./seeds/README.md) | Corpus upload procedures |
 

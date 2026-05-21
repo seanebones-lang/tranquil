@@ -154,7 +154,7 @@ export function SettingsForm({
         <Card className="space-y-6">
           <p className="text-base leading-relaxed text-[var(--color-ink)] italic font-[var(--font-body)]">
             If you ever stop signing in to this app for a long while, we can send
-            your notes — read-only — to someone you trust. They'll get a quiet
+            your notes — read-only — to someone you trust. {"They'll"} get a quiet
             email with a private link.
           </p>
 
@@ -163,7 +163,7 @@ export function SettingsForm({
               htmlFor="heirEmail"
               className="block text-sm font-[var(--font-ui)] text-[var(--color-muted)] mb-2"
             >
-              Trusted contact's email
+              Trusted contact&apos;s email
             </label>
             <Input
               id="heirEmail"
@@ -269,12 +269,27 @@ function SaveIndicator({
       </p>
     );
   }
-  if (savedAt && Date.now() - savedAt < 3000) {
-    return (
-      <p className="text-xs text-[var(--color-sage-deep)] font-[var(--font-ui)]">
-        Saved
-      </p>
-    );
+  if (savedAt !== null) {
+    return <SavedBurst key={savedAt} savedAt={savedAt} />;
   }
   return null;
+}
+
+/** Shows “Saved” for ~3s from `savedAt` timestamp. */
+function SavedBurst({ savedAt }: { savedAt: number }) {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    const elapsed = Date.now() - savedAt;
+    const remaining = Math.max(0, 3000 - elapsed);
+    const t = window.setTimeout(() => setHidden(true), remaining);
+    return () => window.clearTimeout(t);
+  }, [savedAt]);
+
+  if (hidden) return null;
+  return (
+    <p className="text-xs text-[var(--color-sage-deep)] font-[var(--font-ui)]">
+      Saved
+    </p>
+  );
 }

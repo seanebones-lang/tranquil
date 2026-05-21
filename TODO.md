@@ -1,5 +1,7 @@
 # A Tranquil Space — Full Code Review TODO
 
+> **Historical note:** This file predates parts of today’s stack (e.g. **Clerk** replaced NextAuth, Prisma migrations were added separately). Entries reflect what was audited at paste time — confirm against current code rather than trusting `[x]` for auth-related items.
+
 Generated from senior dev team review. Work through these systematically.
 
 ---

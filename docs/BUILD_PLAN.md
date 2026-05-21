@@ -1,6 +1,6 @@
 ---
 title: "A Tranquil Space — Build Plan"
-description: "Full-stack specification, phased delivery, Phase 0 seeds, naming reconciliation — plus integrated repo snapshot (Next app, Prisma, auth, staged routes)."
+description: "Full-stack specification, phased delivery, Phase 0 seeds, naming reconciliation — plus integrated repo snapshot (Next app, Prisma, Clerk, staged routes)."
 ---
 
 # A Tranquil Space — Build Plan

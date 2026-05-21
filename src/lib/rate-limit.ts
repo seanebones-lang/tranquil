@@ -27,7 +27,6 @@ function getRateLimiterRedis(): RateLimiterRedis {
         });
 
   redisClient.on("error", (err) => {
-    // eslint-disable-next-line no-console
     console.error("[redis/ratelimit]", err.message);
   });
 
@@ -60,7 +59,6 @@ export async function checkRateLimit(userId: string): Promise<
     }
 
     // Redis WRONGPASS, network, etc.: don’t brick chat with hard 500s in prod debugging.
-    // eslint-disable-next-line no-console
     console.warn(
       "[rate-limit] Redis error; skipping limit for this request",
       e instanceof Error ? e.message : e,

@@ -125,7 +125,9 @@ function InvalidView({ reason }: { reason: string }) {
   return (
     <main className="min-h-[100dvh] flex items-center justify-center px-6 py-10">
       <div className="text-center max-w-md">
-        <h1 className="text-3xl tracking-tight mb-4">This link doesn't work.</h1>
+        <h1 className="text-3xl tracking-tight mb-4">
+          This link doesn&apos;t work.
+        </h1>
         <p className="text-[var(--color-muted)]">{reason}</p>
       </div>
     </main>

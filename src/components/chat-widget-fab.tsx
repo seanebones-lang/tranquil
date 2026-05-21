@@ -40,7 +40,7 @@ export function ChatWidgetFab() {
       ? window.localStorage.getItem(THREAD_KEY)
       : null;
     if (saved) {
-      setHydrating(true);
+      queueMicrotask(() => setHydrating(true));
       fetch(`/api/threads/${saved}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
@@ -349,7 +349,9 @@ function EmptyState() {
             key={ex}
             className="text-sm text-[var(--color-muted)] italic font-[var(--font-body)]"
           >
-            "{ex}"
+            {'\u201C'}
+            {ex}
+            {'\u201D'}
           </p>
         ))}
       </div>

@@ -69,7 +69,7 @@ export default async function TodayPage() {
 
         <section className="my-16 sm:my-20 flex flex-col items-center text-center">
           <p className="mb-10 text-[var(--color-muted)] text-lg italic">
-            What's on your mind?
+            What&apos;s on your mind?
           </p>
           <PushToTalk uploadsEnabled={voiceUploadsEnabled} />
           <p className="mt-6 text-xs font-[var(--font-ui)] text-[var(--color-whisper)] uppercase tracking-[0.15em]">

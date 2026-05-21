@@ -1,5 +1,7 @@
 # A Tranquil Space — Phase 5 (final)
 
+> **Historical note:** Describes the original phase rollout. **Auth is Clerk**, **sessions are JWT-only**, **`auth.config.ts` is gone**. When in doubt trust **`README.md`**, **`docs/README.md`**, and **`docs/BUILD_PLAN.md`**.
+
 The build is complete. This phase wraps everything: the heirloom mechanic
 (the feature that makes this app meaningful), markdown export, dynamic daily
 reflection, khalwa focus mode, weekly digest, and a full settings page.

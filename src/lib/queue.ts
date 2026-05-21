@@ -33,7 +33,6 @@ function createRedis(): IORedis {
         });
 
   client.on("error", (err) => {
-    // eslint-disable-next-line no-console -- hosting visibility (Railway Redis WRONGPASS, etc.)
     console.error("[redis/bullmq]", err.message);
   });
 

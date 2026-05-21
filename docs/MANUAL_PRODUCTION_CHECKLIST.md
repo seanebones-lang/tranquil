@@ -41,18 +41,22 @@ You will reuse this **`DATABASE_URL`** on **both** `web` and `worker`.
 
 ### Apply Prisma schema to prod DB
 
-The app expects tables including **`User.clerkUserId`**. Easiest bootstrap:
+The app expects tables including **`User.clerkUserId`**. Migration SQL lives in **`prisma/migrations/`** — see **`docs/PRISMA_MIGRATIONS.md`**.
+
+**New empty database (recommended):**
 
 ```bash
-# Locally, with DATABASE_URL exported to Railway’s URL (temporary shell):
 export DATABASE_URL='postgresql://...from Railway...'
-npx prisma db push
+npm run db:deploy
 ```
 
-- [ ] Or run an equivalent Railway “run command” / one-off shell with `cd` repo + `prisma db push`.
-- [ ] Prefer tracked **`prisma migrate deploy`** flow later if you start using migrations for real — for now **`db push`** proves the schema exists.
+- [ ] Or Railway one-off shell: same with **`npx prisma migrate deploy`**.
 
-Don’t skip this step: missing columns → obscure runtime errors during auth/note writes.
+**DB already populated with older `db push` only:** you may **`migrate resolve`** the baseline migration once — full steps in **`docs/PRISMA_MIGRATIONS.md`**.
+
+**Prototype only:** `npx prisma db push` avoids migration history — not ideal for repeatable prod.
+
+Don’t skip applying schema: missing columns → obscure runtime errors during auth/note writes.
 
 ---
 
@@ -223,7 +227,7 @@ Rebuild/redeploy **`worker`** when env changes—it doesn’t magically pick edi
 ## 11 — Redeploy / ordering discipline
 
 - [ ] After **any secret rotation** (`REDIS_URL`, Clerk, xAI): **trigger redeploy** on affected services (`web`, `worker`, sometimes Postgres/Redis-linked references).
-- [ ] Postgres schema changes: run **`db push`/migrate against prod** BEFORE expecting new code assumptions.
+- [ ] Postgres schema changes: apply **`npm run db:deploy`** on prod (or migrate in CI) **before** expecting new code assumptions — **`docs/PRISMA_MIGRATIONS.md`**.
 - [ ] Smoke test **`web`** logs right after redeploy—not just “build succeeded”.
 
 ---

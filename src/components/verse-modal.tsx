@@ -25,25 +25,29 @@ export function VerseModal({
   useEffect(() => {
     if (!open || !reference) return;
     let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setVerse(null);
-    setTafsir(null);
-    setTab("translations");
 
-    void lookupVerseAction({ reference })
-      .then((result) => {
-        if (cancelled) return;
-        setVerse(result.verse);
-        setTafsir(result.tafsir);
-      })
-      .catch((e) => {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Could not load verse");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setLoading(true);
+      setError(null);
+      setVerse(null);
+      setTafsir(null);
+      setTab("translations");
+
+      void lookupVerseAction({ reference })
+        .then((result) => {
+          if (cancelled) return;
+          setVerse(result.verse);
+          setTafsir(result.tafsir);
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          setError(e instanceof Error ? e.message : "Could not load verse");
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    });
 
     return () => {
       cancelled = true;
@@ -200,7 +204,7 @@ function TafsirView({ tafsir }: { tafsir: TafsirCitation | null }) {
   if (!tafsir) {
     return (
       <p className="text-center text-[var(--color-muted)] py-12 italic">
-        Tafsir for this verse isn't available.
+        Tafsir for this verse isn&apos;t available.
       </p>
     );
   }
