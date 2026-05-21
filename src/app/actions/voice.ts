@@ -30,7 +30,7 @@ export async function prepareVoiceNoteUpload(
 
   if (!isR2Configured()) {
     throw new Error(
-      "Voice uploads need Cloudflare R2. Add R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY to .env.local — or tap “Open a blank page” to write instead.",
+      "Voice uploads use Cloudflare R2. Confirm R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY are set, then restart the dev server so env reloads.",
     );
   }
 

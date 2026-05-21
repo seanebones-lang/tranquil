@@ -267,7 +267,7 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 | Heirloom page / export 403 or blocked | Middleware allows `/heirloom-access` and `/api/export?heirloomToken=…`; grant not revoked/expired. |
 | Research / agent scripture errors | Phase 0 complete; `QURAN_*` / `HADITH_*` / `TAFSIR_*` IDs + `XAI_API_KEY` set. |
 | Worker idle | `REDIS_URL` reachable from worker host; jobs actually enqueued. |
-| Build fails on Prisma | `DATABASE_URL` not needed for `prisma generate`; ensure `postinstall` runs in CI. |
+| Mic greyed “isn’t detecting R2…” | Vars are read **at runtime** — restart **`npm run dev`** (or redeploy Railway) after setting **`R2_ACCOUNT_ID`**, **`R2_ACCESS_KEY_ID`**, **`R2_SECRET_ACCESS_KEY`**. No wrapping quotes unless the value itself contains spaces. Optionally **`CLOUDFLARE_ACCOUNT_ID`** instead of **`R2_ACCOUNT_ID`**. |
 
 ---
 

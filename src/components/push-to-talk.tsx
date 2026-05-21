@@ -18,7 +18,7 @@ type RecordingState =
 export function PushToTalk({
   uploadsEnabled = true,
 }: {
-  /** When false, R2 is not configured — show a muted hint instead of failing after record. */
+  /** When false, R2 vars missing or placeholders — avoids recording then failing upload. */
   uploadsEnabled?: boolean;
 }) {
   const router = useRouter();
@@ -153,7 +153,7 @@ export function PushToTalk({
 
   const label = (() => {
     if (!uploadsEnabled && state === "idle") {
-      return "Voice needs R2 in .env.local — use Write below.";
+      return "The server isn’t detecting R2 (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY). Set them in env, restart npm run dev, or open a blank page to write instead.";
     }
     switch (state) {
       case "idle":       return "Hold to speak";
@@ -171,7 +171,7 @@ export function PushToTalk({
         aria-label={
           uploadsEnabled
             ? "Hold to speak — release when done"
-            : "Voice capture unavailable — Cloudflare R2 not configured"
+            : "Hold to speak unavailable — restart dev after configuring R2 environment variables"
         }
         aria-pressed={state === "recording"}
         disabled={state === "uploading" || !uploadsEnabled}
@@ -220,7 +220,7 @@ export function PushToTalk({
       </button>
       <p
         className={cn(
-          "text-sm font-[var(--font-ui)] tracking-wide",
+          "text-sm font-[var(--font-ui)] tracking-wide max-w-md text-center",
           state === "error"
             ? "text-[var(--color-danger)]"
             : !uploadsEnabled
