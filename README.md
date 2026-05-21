@@ -278,6 +278,7 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 
 | Doc | Contents |
 |-----|----------|
+| [`docs/MANUAL_PRODUCTION_CHECKLIST.md`](./docs/MANUAL_PRODUCTION_CHECKLIST.md) | **Step-by-step** Railway / Clerk / Postgres / Redis / R2 / xAI / cron punch list |
 | [`docs/BUILD_PLAN.md`](./docs/BUILD_PLAN.md) | Full architecture, data model sketch, phased rollout, costing notes |
 | [`docs/README.md`](./docs/README.md) | Index of bundle snapshots and pointers |
 | [`seeds/README.md`](./seeds/README.md) | Corpus upload procedures |
