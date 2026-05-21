@@ -3,7 +3,10 @@
 import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
 
-export default function SignUpPage() {
+/**
+ * Mirrors Clerk's default `/sign-up` path so OAuth / verification redirects don't 404.
+ */
+export default function ClerkHyphenSignUpPage() {
   return (
     <main className="min-h-[100dvh] flex items-center justify-center px-6 py-10">
       <div className="w-full max-w-md flex flex-col items-center">
@@ -18,19 +21,19 @@ export default function SignUpPage() {
 
         <SignUp
           routing="path"
-          path="/signup"
-          signInUrl="/signin"
+          path="/sign-up"
+          signInUrl="/sign-in"
           forceRedirectUrl="/"
           fallbackRedirectUrl="/"
         />
 
         <p className="mt-8 text-xs text-[var(--color-whisper)] font-[var(--font-ui)] text-center">
-          Already have an account?{" "}
+          Prefer /signup?{" "}
           <Link
-            href="/signin"
+            href="/signup"
             className="text-[var(--color-dusk)] hover:text-[var(--color-sage-deep)]"
           >
-            Sign in
+            Go there
           </Link>
         </p>
       </div>

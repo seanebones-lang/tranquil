@@ -16,7 +16,13 @@ export default function SignInPage() {
           </p>
         </header>
 
-        <SignIn routing="path" path="/signin" signUpUrl="/signup" />
+        <SignIn
+          routing="path"
+          path="/signin"
+          signUpUrl="/signup"
+          forceRedirectUrl="/"
+          fallbackRedirectUrl="/"
+        />
 
         <p className="mt-8 text-xs text-[var(--color-whisper)] font-[var(--font-ui)] text-center">
           No account yet?{" "}

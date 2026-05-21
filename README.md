@@ -262,7 +262,7 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 
 | Symptom | Check |
 |---------|--------|
-| Sign-in blank / Clerk “hostname” errors | **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** / **`CLERK_SECRET_KEY`** set on Railway; Clerk **Domains** includes your Railway URL; redeploy after env changes. |
+| **404 after sign-in / sign-up** | Clerk Dashboard → **Paths**: set **Home / After sign-in URL** to **`/`** (or rely on app `forceRedirectUrl="/"`). OAuth flows may hit **`/sign-in/*`** — repo serves **`/sign-in/[[...sign-in]]`** as well as **`/signin`**. |
 | Redirect loop or 401 on cron | `CRON_SECRET` matches `Authorization` header; middleware allows `/api/cron/*`. |
 | Heirloom page / export 403 or blocked | Middleware allows `/heirloom-access` and `/api/export?heirloomToken=…`; grant not revoked/expired. |
 | Research / agent scripture errors | Phase 0 complete; `QURAN_*` / `HADITH_*` / `TAFSIR_*` IDs + `XAI_API_KEY` set. |
