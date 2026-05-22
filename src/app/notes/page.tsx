@@ -17,7 +17,8 @@ export default async function NotesPage({
 }) {
   const session = await auth();
   const userId = session?.user?.id;
-  if (!userId) redirect("/signin");
+  // Middleware already verified Clerk; missing bridge = DB/sync issue — avoid /signin loops.
+  if (!userId) redirect("/");
 
   const sp = await searchParams;
   const view = sp.view ?? "timeline";

@@ -188,8 +188,8 @@ Seeds use a separate **[`seeds/.env.example`](./seeds/.env.example)** — keep u
 | Script | Purpose |
 |--------|---------|
 | `npm run dev` | Next dev (Turbopack) |
-| `npm run build` | `prisma generate && next build` |
-| `npm run start` | Production server |
+| `npm run build` | `prisma generate`, **Next standalone** build, copy `public`/static into `.next/standalone` |
+| `npm run start` | Run **`.next/standalone/server.js`** (binds **`0.0.0.0`**, uses Railway **`PORT`**) |
 | `npm run lint` | ESLint via root **`eslint.config.js`** (Next 16+ drops `next lint`) |
 | `npm run db:push` | Push schema (prototyping, no migration history) |
 | `npm run db:migrate` | **`prisma migrate dev`** — create/apply migrations locally |
@@ -265,6 +265,7 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 
 | Symptom | Check |
 |---------|--------|
+| **`404` on the Railway `*.up.railway.app` root** | Public networking is on the **`web`** service (not **`worker`** / databases). Redeploy **`web`** after pulling. This app uses **standalone** output + `npm start`; don’t point the domain at a service with no HTTP server. |
 | **404 after sign-in / sign-up** | Clerk Dashboard → **Paths**: set **Home / After sign-in URL** to **`/`** (or rely on app `forceRedirectUrl="/"`). OAuth flows may hit **`/sign-in/*`** — repo serves **`/sign-in/[[...sign-in]]`** as well as **`/signin`**. |
 | Redirect loop or 401 on cron | `CRON_SECRET` matches `Authorization` header; middleware allows `/api/cron/*`. |
 | Heirloom page / export 403 or blocked | Middleware allows `/heirloom-access` and `/api/export?heirloomToken=…`; grant not revoked/expired. |
@@ -273,7 +274,7 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 | Mic greyed “isn’t detecting R2…” | Vars are read **at runtime** — restart **`npm run dev`** (or redeploy Railway) after setting **`R2_ACCOUNT_ID`**, **`R2_ACCESS_KEY_ID`**, **`R2_SECRET_ACCESS_KEY`**. No wrapping quotes unless the value itself contains spaces. Optionally **`CLOUDFLARE_ACCOUNT_ID`** instead of **`R2_ACCOUNT_ID`**. |
 | **`WRONGPASS` / torrent of `[ioredis]` in Railway logs** | **`REDIS_URL`** on the **web** service does not match Railway Redis credentials (often after reset or typo). Paste the **`REDIS_URL`** from Railway’s Redis service variables into **web** → redeploy web + worker. |
 | Clerk **Missing publishableKey** in logs | On Railway **web** set **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** plus **`CLERK_SECRET_KEY`**, redeploy. Edge middleware reads the **public** key at runtime. |
-| Browser shows bare **Internal Server Error** | Next.js hides prod stack traces — read **Railway deploy logs** for the real error (often Redis or Clerk keys). |
+| Browser shows bare **Internal Server Error** | Next.js hides prod stack traces — read **Railway deploy logs**. Common fixes: **`CLERK_SECRET_KEY`** + **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** set on **`web`** (build + runtime), **`DATABASE_URL`** correct & reachable, run **`npm run db:deploy`** on prod DB. Logs may include **`[auth] Clerk→Prisma bridge failed`**. |
 
 ---
 

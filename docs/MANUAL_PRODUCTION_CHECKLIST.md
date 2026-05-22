@@ -89,6 +89,12 @@ Your repo **`railway.json`** describes **`web`** and **`worker`**:
 - [ ] Point both at **same repo / same branch** (`main`).
 - [ ] Generate a public domain for **`web`** (Networking) — copy the **`https://…up.railway.app`** canonical URL **without trailing slash**.
 
+**If opening that URL shows 404 / “not found”:**
+
+- [ ] The domain is attached to the **`web`** service, not Redis/Postgres/`worker` (**`worker`** has no HTTP server).
+- [ ] After a failed deploy, regenerate the domain or redeploy — Railway can front a dead route.
+- [ ] This repo uses **`output: "standalone"`** and **`npm start` → `scripts/start-production.mjs`** so the app matches [Railway’s Next.js self-hosted guide](https://docs.railway.app/guides/nextjs). If you overrode **Start command**, use **`npm start`** (not a raw `next dev` / empty command).
+
 ---
 
 ## 4 — Clerk (non-negotiable for auth pages)

@@ -16,7 +16,7 @@ export default async function LibraryPage({
 }) {
   const session = await auth();
   const userId = session?.user?.id;
-  if (!userId) redirect("/signin");
+  if (!userId) redirect("/");
 
   const sp = await searchParams;
   const kindFilter =

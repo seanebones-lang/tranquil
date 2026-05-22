@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
+  // Required for Railway / self-hosted: minimal runtime bundle + traced deps (see Railway Next.js guide).
+  output: "standalone",
   reactStrictMode: true,
   experimental: {
     serverActions: {
@@ -8,7 +10,7 @@ const config: NextConfig = {
     },
   },
   // The Prisma client uses Node APIs; mark it external for the server bundle
-  serverExternalPackages: ["@prisma/client", "bcrypt"],
+  serverExternalPackages: ["@prisma/client"],
   headers: async () => [
     {
       source: "/:path*",

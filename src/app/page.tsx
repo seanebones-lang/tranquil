@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { auth as clerkSession } from "@clerk/nextjs/server";
 import { auth } from "~/auth";
 import { prisma } from "@/lib/db";
 import { Nav } from "@/components/nav";
@@ -10,7 +11,10 @@ import { firstName, timeOfDayGreeting } from "@/lib/utils";
 import { format } from "date-fns";
 
 export default async function TodayPage() {
+  const clerkState = await clerkSession();
   const session = await auth();
+  const clerkUserPresent = clerkState.userId != null;
+  const dbBridgeMissing = clerkUserPresent && session == null;
   const userId = session?.user?.id;
   const voiceUploadsEnabled = isR2Configured();
 
@@ -22,10 +26,27 @@ export default async function TodayPage() {
 
   const today = startOfTodayUTC();
 
-  const [recent, reflection] = await Promise.all([
-    userId
-      ? prisma.note.findMany({
-          where: { userId, deletedAt: null, status: { in: ["saved", "draft"] } },
+  type RecentNote = {
+    id: string;
+    title: string | null;
+    aiSummary: string | null;
+    bodyMd: string | null;
+    source: string;
+    updatedAt: Date;
+  };
+
+  let recent: RecentNote[] = [];
+  let reflection: { prompt: string } | null = null;
+
+  if (userId) {
+    try {
+      [recent, reflection] = await Promise.all([
+        prisma.note.findMany({
+          where: {
+            userId,
+            deletedAt: null,
+            status: { in: ["saved", "draft"] },
+          },
           orderBy: { updatedAt: "desc" },
           take: 4,
           select: {
@@ -36,15 +57,18 @@ export default async function TodayPage() {
             source: true,
             updatedAt: true,
           },
-        })
-      : Promise.resolve([]),
-    userId
-      ? prisma.dailyReflection.findUnique({
+        }),
+        prisma.dailyReflection.findUnique({
           where: { userId_date: { userId, date: today } },
           select: { prompt: true },
-        })
-      : Promise.resolve(null),
-  ]);
+        }),
+      ]);
+    } catch (error) {
+      console.error("[today/page] data load failed", error);
+      recent = [];
+      reflection = null;
+    }
+  }
 
   const greeting = timeOfDayGreeting();
   const name = firstName(session?.user?.name);
@@ -55,6 +79,22 @@ export default async function TodayPage() {
   return (
     <>
       <Nav userName={session?.user?.name} />
+
+      {dbBridgeMissing ? (
+        <div className="mx-auto max-w-2xl px-6 sm:px-10 pt-4">
+          <Card className="border border-[var(--color-danger)]/35 p-4 text-sm font-[var(--font-ui)] text-[var(--color-ink)]">
+            <strong className="font-medium text-[var(--color-danger)]">
+              Database sync paused.
+            </strong>{" "}
+            You are signed in, but Postgres didn&apos;t respond or the schema
+            isn&apos;t applied yet. Confirm <code>DATABASE_URL</code> on your
+            Railway <strong>web</strong> service (same DB as Postgres), then run{" "}
+            <code className="text-[var(--color-muted)]">npm run db:deploy</code>{" "}
+            once against production — see repo file{" "}
+            <code>docs/MANUAL_PRODUCTION_CHECKLIST.md</code>.
+          </Card>
+        </div>
+      ) : null}
 
       <main className="mx-auto max-w-2xl px-6 sm:px-10 pt-8 pb-32">
         <header className="mb-12 sm:mb-16">

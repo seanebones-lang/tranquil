@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { auth } from "~/auth";
 import { prisma } from "@/lib/db";
 import { Nav } from "@/components/nav";
@@ -12,7 +12,7 @@ type Params = { params: Promise<{ id: string }> };
 export default async function NotePage({ params }: Params) {
   const { id } = await params;
   const session = await auth();
-  if (!session?.user?.id) notFound();
+  if (!session?.user?.id) redirect("/");
 
   const note = await prisma.note.findFirst({
     where: { id, userId: session.user.id, deletedAt: null },

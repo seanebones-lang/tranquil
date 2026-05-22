@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function NewNotePage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/signin");
+  if (!session?.user?.id) redirect("/");
 
   const note = await prisma.note.create({
     data: {

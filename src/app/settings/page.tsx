@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/signin");
+  if (!session?.user?.id) redirect("/");
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -28,7 +28,7 @@ export default async function SettingsPage() {
       createdAt: true,
     },
   });
-  if (!user) redirect("/signin");
+  if (!user) redirect("/");
 
   const activeGrants = await prisma.heirloomAccess.findMany({
     where: { ownerId: session.user.id, revokedAt: null, expiresAt: { gt: new Date() } },
