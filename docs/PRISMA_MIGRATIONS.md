@@ -7,7 +7,7 @@ This repo includes an initial **`prisma/migrations/20260521180000_baseline`** mi
 | Command | When |
 |--------|------|
 | **`npm run db:migrate`** (`prisma migrate dev`) | Local dev: applies pending migrations into your dev DB + updates history. |
-| **`npm run db:deploy`** (`prisma migrate deploy`) | Prod / CI / manual shell. **`npm run start`** invokes this **automatically before** Next.js (`package.json`) so **`web`** deploys migrate inside Railway (**`railway.internal` works there** — not with `railway run` on Mac). |
+| **`npm run db:deploy`** (`prisma migrate deploy`) | Prod / CI / manual shell. **`npm run start`** runs this **automatically before** Next.js (**via `.next/standalone/start-production.mjs`**) so **`web`** deploys migrate inside Railway (**`railway.internal` works there** — not with `railway run` on Mac). |
 | **`npm run db:push`** | Quick prototyping against a disposable DB — still supported; not the same history as migrations. |
 
 ## Railway: `railway run` → `P1001` (`railway.internal`)
@@ -16,7 +16,7 @@ Your **`DATABASE_URL`** usually targets **`postgres-….railway.internal`**. Tha
 
 **`railway run npm run db:deploy`** runs **on your Mac**, with env vars copied in — it **does not** execute inside Railway. You will always see **`P1001`** with a private URL. [Railway CLI `run` docs](https://docs.railway.com/cli/run) state it runs **locally**.
 
-**What this repo does:** **`npm run start`** (production) runs **`prisma migrate deploy`** first, **then** starts Next.js (`package.json`). Migrations therefore run **in the deployed `web` container**, where **`railway.internal` resolves.**
+**What this repo does:** **`npm run start`** invokes **`.next/standalone/start-production.mjs`**, which runs **`prisma migrate deploy`** first, **then** starts Next.js standalone. Migrations therefore run **in the deployed `web` container**, where **`railway.internal` resolves.**
 
 **Push and redeploy `web`** — no local migrate required.
 

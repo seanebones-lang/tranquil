@@ -1,7 +1,0 @@
-# Railpack picks up build/start from package.json.
-#
-# Migrations run at container boot: npm run start → prisma migrate deploy (see package.json).
-# That runs ON Railway where *.railway.internal DATABASE_URL works.
-#
-# `railway run` is LOCAL ONLY (env injection); it CANNOT migrate private DB URLs (P1001).
-# One-off inside live container: railway ssh -s web -- npm run db:deploy

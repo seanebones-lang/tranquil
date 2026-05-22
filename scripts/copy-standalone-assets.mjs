@@ -26,4 +26,11 @@ if (fs.existsSync(stat)) {
   fs.cpSync(stat, path.join(standalone, ".next", "static"), { recursive: true });
 }
 
-console.log("[copy-standalone-assets] copied public/ and .next/static/ → .next/standalone/");
+// Railpack images may omit `scripts/` — copy the bootstrap next to standalone `server.js`.
+const startProdSrc = path.join(root, "scripts", "start-production.mjs");
+const startProdDst = path.join(standalone, "start-production.mjs");
+if (fs.existsSync(startProdSrc)) {
+  fs.copyFileSync(startProdSrc, startProdDst);
+}
+
+console.log("[copy-standalone-assets] copied public/, .next/static, start-production.mjs → .next/standalone/");

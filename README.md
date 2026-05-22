@@ -228,9 +228,9 @@ When adding new public routes, update **`src/middleware.ts`** so they are not bl
 **Auto-deploy is now enabled** on every push to `main`.
 
 - Railway project linked to `seanebones-lang/tranquil`
-- `railway.json` configures Nixpacks build + separate `web` (Next.js) and `worker` (BullMQ) services
-- `npm ci && npm run build` (with `postinstall: prisma generate`)
-- Web starts with `npm start`, worker with `npm run worker`
+- **`web`**: build **Next.js** (`npm ci && npm run build` or Railpack default); start **`npm start`** (runs **`.next/standalone/start-production.mjs`** — migrations + standalone server)
+- **`worker`**: build **`npm ci` only**; start **`npm run worker`**
+- See **`docs/MANUAL_PRODUCTION_CHECKLIST.md`** — there is **no** root `railway.json` (invalid “services” JSON is ignored by Railway and caused confusing deploys)
 - All env vars (`DATABASE_URL`, `REDIS_URL`, `XAI_API_KEY`, Clerk keys, `NEXTAUTH_URL`, `AUTH_RESEND_KEY`, `EMAIL_FROM`, `CRON_SECRET`, R2 credentials, etc.) must be set in Railway
 
 Push to main = instant redeploy.

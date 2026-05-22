@@ -46,7 +46,7 @@ The app expects tables including **`User.clerkUserId`**. Migration SQL lives in 
 **Railway internal URL:** Railway’s **`DATABASE_URL`** often uses **`postgres-….railway.internal`**. **Your laptop cannot reach that host.**  
 **Never use `railway run npm run db:deploy` for private URLs** — `railway run` executes **locally** ([docs](https://docs.railway.com/cli/run)) and returns **`P1001`**.
 
-**This repo migrates automatically:** **`npm run start`** begins with **`prisma migrate deploy`** (see **`package.json`**) so each **`web`** deploy applies migrations **inside the container** on Railway’s network. **Git push → redeploy `web`** (or `railway up`).
+**This repo migrates automatically:** **`npm run start`** runs **`.next/standalone/start-production.mjs`** (copy of `scripts/` produced during **`npm run build`**), which begins with **`prisma migrate deploy`**, so each **`web`** deploy applies migrations **inside the container** on Railway’s network. **Git push → redeploy `web`** (or `railway up`).
 
 **From your laptop but on Railway’s VM:** **`railway ssh -s web -- npm run db:deploy`** ([SSH docs](https://docs.railway.com/cli/ssh)).
 
@@ -86,14 +86,16 @@ Redis is required for BullMQ (**voice transcription queue**, organize/embed jobs
 
 ## 3 — Railway: Two Node services (`web`, `worker`)
 
-Your repo **`railway.json`** describes **`web`** and **`worker`**:
+There is **no** valid workspace-level `railway.json` checked in anymore (Railway’s schema does **not** support a `{ "services": { … } }` wrapper — that file used to merge **incorrectly**, so starters were unreliable). Configure **`web`** and **`worker`** in the **Railway dashboard** separately.
 
 | Service | Build | Start command | Role |
 |--------|--------|---------------|------|
-| `web` | `npm ci && npm run build` | `npm start` | Next.js app |
-| `worker` | `npm ci` (no Next build needed) | `npm run worker` | BullMQ processors |
+| `web` | `npm ci && npm run build` (or Railpack default) | `npm start` | Next.js app |
+| `worker` | **`npm ci` only** (no Next.js build needed) | `npm run worker` | BullMQ processors |
 
-- [ ] Create/configure **`web`** to match **build → `npm ci && npm run build`**, **start → `npm start`**.
+- [ ] Create/configure **`web`** to match **build → full Next build**, **start → `npm start`** (runs **`.next/standalone/start-production.mjs`** copied at build — do **not** use bare `node .next/standalone/server.js` alone or you skip migrations unless you intentionally changed that).
+
+- **Web only (recommended):** **Settings → Deploy → Health check path** = **`/railway-health.json`** so health checks do not hit **`/`** (Clerk / app code). A yellow warning on **`web`** with “Completed” is often a **failed health check** on `/`.
 - [ ] Create/configure **`worker`** to match **`npm ci`**, **start → `npm run worker`**.
 - [ ] Point both at **same repo / same branch** (`main`).
 - [ ] Generate a public domain for **`web`** (Networking) — copy the **`https://…up.railway.app`** canonical URL **without trailing slash**.
@@ -102,7 +104,39 @@ Your repo **`railway.json`** describes **`web`** and **`worker`**:
 
 - [ ] The domain is attached to the **`web`** service, not Redis/Postgres/`worker` (**`worker`** has no HTTP server).
 - [ ] After a failed deploy, regenerate the domain or redeploy — Railway can front a dead route.
-- [ ] This repo uses **`output: "standalone"`**, **`npm run start`** (runs **`prisma migrate deploy`** then `scripts/start-production.mjs`). Keep **Start command** as **`npm start`** (or empty to use `package.json`). Do not override with **only** `node …/server.js` or you skip migrations.
+- [ ] This repo uses **`output: "standalone"`**. **`npm run start`** runs **`.next/standalone/start-production.mjs`** (copied from `scripts/` during **`npm run build`**). It runs **`prisma migrate deploy`**, then launches **`server.js`** in that folder. Keep **Start command** as **`npm start`** (or empty to use `package.json`). Do not override with **only** `node …/server.js` or you skip migrations.
+
+**Seeing 502 (“Bad Gateway”):**
+
+- Railway’s edge could not connect to your process (usually **not** a Clerk issue). Typical causes:
+
+  - **`prisma migrate deploy` fails** → process exits → crash loop → 502 during restarts.
+
+  - **`.next/standalone/` missing at runtime** → wrong **Root Directory** / build never ran **`npm run build`**.
+
+  - **`PORT` unset** → Next listens on **3000** while Railway proxies another port (**set `PORT`** on **`web`; Railway usually injects it automatically unless overridden).
+
+  - **Temporary unblock:** add **`SKIP_DB_MIGRATE_ON_START=1`** on **`web`**, redeploy. If **`/railway-health.json`** works afterward, migrations/DB connectivity at boot were the culprit — fix **`DATABASE_URL`**, remove the skip var, redeploy.
+
+**You see literally no logs (empty log panel):**
+
+- Railway splits **build** logs from **deploy/runtime** logs. Open **`web` → Deployments → latest deployment**, then check **both** **Build Logs** **and** **Deploy / Application Logs** (names vary). Errors before the container runs show up only under **build**.
+
+  - Deploy still **building** → no runtime logs yet; read **build** output.
+
+  - Make sure you opened logs for **`web`**, not Postgres / Redis / `worker`.
+
+- **CLI (same streams):** from your repo,
+
+  ```bash
+  railway login && railway link
+  railway logs -s web --build -n 300    # npm ci / next build phase
+  railway logs -s web -d -n 300        # container start — look for [tranquil/start] bootstrap
+  ```
+
+- After deploying, the **first runtime line** should contain **`[tranquil/start] bootstrap`** (the command is **`node .next/standalone/start-production.mjs`**). If it never appears, Railway is probably **not running `npm start`** (custom Start command, wrong service, or deploy stuck before run).
+
+- [ ] **Smoke URLs (skip Clerk middleware):** open **`https://…/railway-health.json`** (static JSON) and **`https://…/api/health`**. If those return **`{"ok":true,...}`** but **`/`** is an error, inspect Railway logs for **`[tranquil/boot]`** lines (database URL hint + Clerk key presence) and fix **Clerk** env or allowed origins next.
 
 ---
 
