@@ -43,14 +43,18 @@ You will reuse this **`DATABASE_URL`** on **both** `web` and `worker`.
 
 The app expects tables including **`User.clerkUserId`**. Migration SQL lives in **`prisma/migrations/`** — see **`docs/PRISMA_MIGRATIONS.md`**.
 
+**Railway internal URL:** Railway’s **`DATABASE_URL`** often uses **`postgres-….railway.internal`**. Your **Mac cannot open that hostname** (**`railway run npm run db:deploy` still fails** with **`P1001`**). Root **`railway.toml`** configures **Pre-deploy** **`npm run db:deploy`** so migrations run **on Railway** on each **`web`** deploy (after merge/push **`main`**).
+
+**From your laptop (optional one-off):** use Postgres **Public** TCP **`postgresql://`** from the dashboard → `export DATABASE_URL='…'` → `npm run db:deploy` — or run against local Docker Postgres only for dev.
+
 **New empty database (recommended):**
 
 ```bash
-export DATABASE_URL='postgresql://...from Railway...'
+export DATABASE_URL='postgresql://...real URL..., not placeholders...'
 npm run db:deploy
 ```
 
-- [ ] Or Railway one-off shell: same with **`npx prisma migrate deploy`**.
+- [ ] Or rely on **`railway.toml` Pre-deploy** after you **git push** (no laptop needed).
 
 **DB already populated with older `db push` only:** you may **`migrate resolve`** the baseline migration once — full steps in **`docs/PRISMA_MIGRATIONS.md`**.
 

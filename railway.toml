@@ -1,0 +1,8 @@
+# Railway picks this file up alongside the dashboard settings; in-code overrides win.
+# Prisma migrations need the **private** `DATABASE_URL` (*.railway.internal) — unreachable
+# from your laptop, so never rely on plain `railway run npm run db:deploy` for that URL.
+#
+# Pre-deploy runs on Railway between build and start, inside the project network.
+
+[deploy]
+preDeployCommand = ["npm run db:deploy"]

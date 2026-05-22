@@ -274,7 +274,8 @@ Utility **`cn`** and small helpers live in **`src/lib/utils.ts`**.
 | Mic greyed “isn’t detecting R2…” | Vars are read **at runtime** — restart **`npm run dev`** (or redeploy Railway) after setting **`R2_ACCOUNT_ID`**, **`R2_ACCESS_KEY_ID`**, **`R2_SECRET_ACCESS_KEY`**. No wrapping quotes unless the value itself contains spaces. Optionally **`CLOUDFLARE_ACCOUNT_ID`** instead of **`R2_ACCOUNT_ID`**. |
 | **`WRONGPASS` / torrent of `[ioredis]` in Railway logs** | **`REDIS_URL`** on the **web** service does not match Railway Redis credentials (often after reset or typo). Paste the **`REDIS_URL`** from Railway’s Redis service variables into **web** → redeploy web + worker. |
 | Clerk **Missing publishableKey** in logs | On Railway **web** set **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** plus **`CLERK_SECRET_KEY`**, redeploy. Edge middleware reads the **public** key at runtime. |
-| Browser shows bare **Internal Server Error** | Next.js hides prod stack traces — read **Railway deploy logs**. Common fixes: **`CLERK_SECRET_KEY`** + **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** set on **`web`** (build + runtime), **`DATABASE_URL`** correct & reachable, run **`npm run db:deploy`** on prod DB. Logs may include **`[auth] Clerk→Prisma bridge failed`**. |
+| Browser shows bare **Internal Server Error** | Next.js hides prod stack traces — read **Railway deploy logs**. Common fixes: **`CLERK_SECRET_KEY`** + **`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** set on **`web`** (build + runtime), **`DATABASE_URL`** correct & reachable, run **`npm run db:deploy`** on prod DB (or rely on **`railway.toml`** Pre-deploy on deploy). Logs may include **`[auth] Clerk→Prisma bridge failed`**. |
+| **`npm run db:deploy` locally → `P1001`** to **`*.railway.internal`** | **`DATABASE_URL` is private Railway DNS** — your Mac can’t route there. Migrate on Railway: **`railway.toml`** Pre-deploy, or Postgres **Public** TCP URL once from laptop — see **`docs/PRISMA_MIGRATIONS.md`**. |
 
 ---
 
