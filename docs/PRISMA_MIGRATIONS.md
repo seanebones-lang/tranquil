@@ -7,20 +7,34 @@ This repo includes an initial **`prisma/migrations/20260521180000_baseline`** mi
 | Command | When |
 |--------|------|
 | **`npm run db:migrate`** (`prisma migrate dev`) | Local dev: applies pending migrations into your dev DB + updates history. |
-| **`npm run db:deploy`** (`prisma migrate deploy`) | **Production / Railway:** migrations against **`DATABASE_URL`**. **`railway.toml`** runs **`npm run db:deploy`** as **Railway Pre-deploy** (private `*.railway.internal` works there — **not** from your Mac). |
+| **`npm run db:deploy`** (`prisma migrate deploy`) | Prod / CI / manual shell. **`npm run start`** invokes this **automatically before** Next.js (`package.json`) so **`web`** deploys migrate inside Railway (**`railway.internal` works there** — not with `railway run` on Mac). |
 | **`npm run db:push`** | Quick prototyping against a disposable DB — still supported; not the same history as migrations. |
 
 ## Railway: `railway run` → `P1001` (`railway.internal`)
 
-Your **`DATABASE_URL`** usually targets **`postgres-….railway.internal`**. That is **only reachable inside Railway’s network**. **`railway run`** still executes **on your laptop**, so Prisma cannot reach that host (**`P1001`**).
+Your **`DATABASE_URL`** usually targets **`postgres-….railway.internal`**. That host is reachable **only inside Railway’s network**.
 
-**Fix:** Pre-deploy (**`railway.toml`** in repo) migrates automatically on **`web`** deploy — **push/commit and redeploy**.
+**`railway run npm run db:deploy`** runs **on your Mac**, with env vars copied in — it **does not** execute inside Railway. You will always see **`P1001`** with a private URL. [Railway CLI `run` docs](https://docs.railway.com/cli/run) state it runs **locally**.
 
-**Fix (one migration from Mac):** Postgres → enable **Public** TCP networking → copy the **public** `postgresql://…` URL → `export DATABASE_URL='…'` → `npm run db:deploy` once (**don’t paste placeholders**).
+**What this repo does:** **`npm run start`** (production) runs **`prisma migrate deploy`** first, **then** starts Next.js (`package.json`). Migrations therefore run **in the deployed `web` container**, where **`railway.internal` resolves.**
 
-**Wrong:** `export DATABASE_URL='paste-your-railway-postgres-url-here'` (not a Postgres URL).
+**Push and redeploy `web`** — no local migrate required.
 
-**Note:** Prisma reads **`.env`**, not `.env.local`, unless you export variables in the shell.
+### One-off migrate from laptop (actually on Railway hardware)
+
+Uses SSH into the running service (**requires Railway SSH setup**):
+
+```bash
+cd /your/tranquil/repo
+railway link
+railway ssh -s web -- npm run db:deploy
+```
+
+([`railway ssh` docs](https://docs.railway.com/cli/ssh))
+
+### Or temporary public URL
+
+Postgres → **Public** TCP → copy **`postgresql://…`** (public host) → `export DATABASE_URL='…'` → `npm run db:deploy` on your Mac **once**.
 
 ## Fresh Postgres (recommended)
 

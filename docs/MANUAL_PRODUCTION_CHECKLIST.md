@@ -43,18 +43,23 @@ You will reuse this **`DATABASE_URL`** on **both** `web` and `worker`.
 
 The app expects tables including **`User.clerkUserId`**. Migration SQL lives in **`prisma/migrations/`** — see **`docs/PRISMA_MIGRATIONS.md`**.
 
-**Railway internal URL:** Railway’s **`DATABASE_URL`** often uses **`postgres-….railway.internal`**. Your **Mac cannot open that hostname** (**`railway run npm run db:deploy` still fails** with **`P1001`**). Root **`railway.toml`** configures **Pre-deploy** **`npm run db:deploy`** so migrations run **on Railway** on each **`web`** deploy (after merge/push **`main`**).
+**Railway internal URL:** Railway’s **`DATABASE_URL`** often uses **`postgres-….railway.internal`**. **Your laptop cannot reach that host.**  
+**Never use `railway run npm run db:deploy` for private URLs** — `railway run` executes **locally** ([docs](https://docs.railway.com/cli/run)) and returns **`P1001`**.
 
-**From your laptop (optional one-off):** use Postgres **Public** TCP **`postgresql://`** from the dashboard → `export DATABASE_URL='…'` → `npm run db:deploy` — or run against local Docker Postgres only for dev.
+**This repo migrates automatically:** **`npm run start`** begins with **`prisma migrate deploy`** (see **`package.json`**) so each **`web`** deploy applies migrations **inside the container** on Railway’s network. **Git push → redeploy `web`** (or `railway up`).
 
-**New empty database (recommended):**
+**From your laptop but on Railway’s VM:** **`railway ssh -s web -- npm run db:deploy`** ([SSH docs](https://docs.railway.com/cli/ssh)).
+
+**From your laptop with public Postgres only (one-off):** Postgres → enable **Public** TCP proxy → **`export DATABASE_URL='postgresql://…'`** → **`npm run db:deploy`**.
+
+**New empty database (optional local / public URL):**
 
 ```bash
 export DATABASE_URL='postgresql://...real URL..., not placeholders...'
 npm run db:deploy
 ```
 
-- [ ] Or rely on **`railway.toml` Pre-deploy** after you **git push** (no laptop needed).
+- [ ] Or **redeploy `web`** — **`npm run start`** applies migrations automatically (no laptop `railway run`).
 
 **DB already populated with older `db push` only:** you may **`migrate resolve`** the baseline migration once — full steps in **`docs/PRISMA_MIGRATIONS.md`**.
 
@@ -97,7 +102,7 @@ Your repo **`railway.json`** describes **`web`** and **`worker`**:
 
 - [ ] The domain is attached to the **`web`** service, not Redis/Postgres/`worker` (**`worker`** has no HTTP server).
 - [ ] After a failed deploy, regenerate the domain or redeploy — Railway can front a dead route.
-- [ ] This repo uses **`output: "standalone"`** and **`npm start` → `scripts/start-production.mjs`** so the app matches [Railway’s Next.js self-hosted guide](https://docs.railway.app/guides/nextjs). If you overrode **Start command**, use **`npm start`** (not a raw `next dev` / empty command).
+- [ ] This repo uses **`output: "standalone"`**, **`npm run start`** (runs **`prisma migrate deploy`** then `scripts/start-production.mjs`). Keep **Start command** as **`npm start`** (or empty to use `package.json`). Do not override with **only** `node …/server.js` or you skip migrations.
 
 ---
 

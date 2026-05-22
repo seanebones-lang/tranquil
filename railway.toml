@@ -1,8 +1,7 @@
-# Railway picks this file up alongside the dashboard settings; in-code overrides win.
-# Prisma migrations need the **private** `DATABASE_URL` (*.railway.internal) — unreachable
-# from your laptop, so never rely on plain `railway run npm run db:deploy` for that URL.
+# Railpack picks up build/start from package.json.
 #
-# Pre-deploy runs on Railway between build and start, inside the project network.
-
-[deploy]
-preDeployCommand = ["npm run db:deploy"]
+# Migrations run at container boot: npm run start → prisma migrate deploy (see package.json).
+# That runs ON Railway where *.railway.internal DATABASE_URL works.
+#
+# `railway run` is LOCAL ONLY (env injection); it CANNOT migrate private DB URLs (P1001).
+# One-off inside live container: railway ssh -s web -- npm run db:deploy
