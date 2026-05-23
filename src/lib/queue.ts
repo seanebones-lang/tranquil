@@ -50,11 +50,10 @@ export function getQueueRedis(): IORedis {
   return _redisSingleton;
 }
 
-/** BullMQ Worker spread target: `{ ...redisConnection }` */
+/** BullMQ `Worker`/`Queue` use object spread (`{ ...opts }`). A getter `{ get connection() }`
+ *  is omitted by spread/copy — connection became undefined → ioredis fell back to localhost. */
 export const redisConnection: Pick<QueueBaseOptions, "connection"> = {
-  get connection() {
-    return getQueueRedis();
-  },
+  connection: getQueueRedis(),
 };
 
 type GlobalQueues = {
