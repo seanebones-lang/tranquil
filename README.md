@@ -297,3 +297,8 @@ Issues and PRs welcome for bugs and docs. Do **not** commit real `.env` files or
 
 For production, review heirloom tokens, cron secrets, and R2 bucket policies as part of your threat model.
 
+
+
+## Recent Audit (2026-05-22)
+- Prisma schema cleaned: removed legacy Auth.js v5 models (Account, Session, VerificationToken). The project is now fully Clerk-backed with a lean schema.
+
