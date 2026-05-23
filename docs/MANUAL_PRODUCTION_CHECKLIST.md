@@ -309,3 +309,8 @@ Rebuild/redeploy **`worker`** when env changes—it doesn’t magically pick edi
 - [ ] Middleware vs random 404 ⇒ check **`src/middleware.ts`** public routes (`/signin`, `/signup`, hyphen variants, cron, heirloom routes).
 
 Good luck—you’re debugging distributed systems stitched by env vars. When it works, Commit to never paste keys into chat screenshots.
+
+
+## Audit Note (2026-05-22)
+Full code-to-document audit completed. All described core features (auth, voice pipeline, worker jobs, research, heirloom, middleware) are implemented and match this checklist. One schema cleanup performed.
+
