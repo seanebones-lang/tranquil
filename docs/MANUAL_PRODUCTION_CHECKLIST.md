@@ -37,6 +37,10 @@ Full product (everything the repo wires up):
 - [ ] Add **PostgreSQL** plugin/service to Railway.
 - [ ] Copy **`DATABASE_URL`** from the Postgres service (**Variables** / **Connect**) — Railway usually injects **`${{ Postgres.DATABASE_URL }}`** if you wire references; paste or reference consistency is what matters.
 
+**Multiple Postgres databases in one project:** point **`web`** and **`worker`** at the **same** instance your tables live on (`Postgres`, `Postgres-xxxx`, …). Wrong instance → **`P1001`**, dead **`ballast.proxy.rlwy.net`**, etc.
+
+**`postgres…railway.internal` keeps failing:** private networking quirks happen. **`${{ <DbService>.DATABASE_PUBLIC_URL }}`** for **`DATABASE_URL`** (same DB on both services) usually unblocks **`prisma migrate deploy`** until internal is sorted.
+
 You will reuse this **`DATABASE_URL`** on **both** `web` and `worker`.
 
 ### Apply Prisma schema to prod DB
@@ -90,7 +94,7 @@ There is **no** valid workspace-level `railway.json` checked in anymore (Railway
 
 | Service | Build | Start command | Role |
 |--------|--------|---------------|------|
-| `web` | `npm ci && npm run build` (or Railpack default) | `npm start` | Next.js app |
+| `web` | `npm ci && npm run build` (or Railpack default) | **`npm start`** (or **`cd /app && node .next/standalone/start-production.mjs`**) — see **`package.json`**. Railway’s runtime **`WORKDIR`** may **not** be `/app`; if **`npm`** errors with **`ENOENT /package.json`**, pin **`cd /app && …`**. Never use **`nom run start`** — that typo exits immediately (**empty deploy logs**, **502**). | Next.js app |
 | `worker` | **`npm ci` only** (no Next.js build needed) | `npm run worker` | BullMQ processors |
 
 - [ ] Create/configure **`web`** to match **build → full Next build**, **start → `npm start`** (runs **`.next/standalone/start-production.mjs`** copied at build — do **not** use bare `node .next/standalone/server.js` alone or you skip migrations unless you intentionally changed that).
@@ -137,6 +141,10 @@ There is **no** valid workspace-level `railway.json` checked in anymore (Railway
 - After deploying, the **first runtime line** should contain **`[tranquil/start] bootstrap`** (the command is **`node .next/standalone/start-production.mjs`**). If it never appears, Railway is probably **not running `npm start`** (custom Start command, wrong service, or deploy stuck before run).
 
 - [ ] **Smoke URLs (skip Clerk middleware):** open **`https://…/railway-health.json`** (static JSON) and **`https://…/api/health`**. If those return **`{"ok":true,...}`** but **`/`** is an error, inspect Railway logs for **`[tranquil/boot]`** lines (database URL hint + Clerk key presence) and fix **Clerk** env or allowed origins next.
+
+**Smoke tests OK but plain `curl` to `/` is 404 with Clerk headers:**
+
+- Response headers such as **`x-clerk-auth-reason: … dev-browser-missing`** mean **Clerk** is rewriting the request (unauthenticated scripted clients ≠ a real signed-in browser). Test **`/`** in **Safari/Chrome**, not only **`curl`**.
 
 ---
 
