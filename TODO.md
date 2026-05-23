@@ -50,3 +50,10 @@ Generated from senior dev team review. Work through these systematically.
 ## STATUS KEY
 - [ ] = todo
 - [x] = done
+
+
+## Audit Note (2026-05-22)
+- Removed unused Auth.js v5 models from prisma/schema.prisma (Account, Session, VerificationToken)
+- Project is now fully Clerk-backed with clean schema
+- Committed as 83145e0
+
