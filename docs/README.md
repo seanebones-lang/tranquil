@@ -9,3 +9,9 @@
 | [../seeds/README.md](../seeds/README.md) | Phase 0 — Grok Collections seed scripts |
 
 **Historical zips:** `phase*-bundle.md` READMEs describe partial exports; detail may lag current **Clerk** stack — verify against live code.
+
+
+## Audit Status
+Core described functionality (Clerk auth, voice R2 pipeline + worker, research Collections, chat, heirloom, cron middleware, organize/embed jobs) is implemented and matches the documentation.
+One fix made: Removed legacy Auth.js models from Prisma schema.
+
