@@ -356,3 +356,8 @@ Phase 1 closeout: reconcile errors → **merge PR / push main** → tag mileston
 | `src/components/` | UI building blocks (+ future shadcn growth) |
 
 Still outstanding vs the master vision: e.g. **`react-hook-form`**, **`@react-pdf/renderer`**, dedicated Research/chat routes — track **`package.json`** + § phased rollout.
+
+
+## Audit Note (2026-05-22)
+Prisma schema was cleaned of legacy Auth.js v5 models. The data model now accurately reflects the Clerk-only auth system described throughout this document.
+
