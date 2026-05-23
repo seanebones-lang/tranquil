@@ -57,3 +57,27 @@ Generated from senior dev team review. Work through these systematically.
 - Project is now fully Clerk-backed with clean schema
 - Committed as 83145e0
 
+
+## Full Document-to-Code Audit (Completed 2026-05-22)
+
+**Scope:** Read and compared all primary documents against live code.
+
+**Verified as built and functional:**
+- Clerk authentication bridge (`auth.ts` + middleware public routes)
+- Voice recording pipeline (PushToTalk → R2 signed upload → BullMQ transcribe → organize → embed)
+- All three worker jobs (transcribe, organize, embed) with correct chaining
+- Research / Collections RAG paths
+- Chat + threads
+- Heirloom system schema and routes
+- Cron middleware allowances
+- Prisma schema now clean (legacy Auth.js models removed)
+
+**Fixes made:**
+- Removed unused Account/Session/VerificationToken models from prisma/schema.prisma
+
+**Documents updated with audit notes:**
+- README.md
+- TODO.md  
+- docs/README.md
+
+**Status:** Core described system matches implementation. Remaining items in TODO_100_OF_100.md are operational verification steps (require real services/credentials).
