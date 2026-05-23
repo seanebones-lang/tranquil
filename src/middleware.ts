@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
   "/signin(.*)",
@@ -10,14 +11,15 @@ const isPublicRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   const { pathname, searchParams } = req.nextUrl;
 
-  if (pathname === "/api/health" || pathname.startsWith("/api/health/")) return;
-  if (pathname.startsWith("/api/cron")) return;
-  if (pathname.startsWith("/heirloom-access")) return;
+  if (pathname === "/api/health" || pathname.startsWith("/api/health/"))
+    return NextResponse.next();
+  if (pathname.startsWith("/api/cron")) return NextResponse.next();
+  if (pathname.startsWith("/heirloom-access")) return NextResponse.next();
   if (pathname.startsWith("/api/export") && searchParams.has("heirloomToken"))
-    return;
-  if (pathname.startsWith("/api/recitation")) return;
+    return NextResponse.next();
+  if (pathname.startsWith("/api/recitation")) return NextResponse.next();
 
-  if (isPublicRoute(req)) return;
+  if (isPublicRoute(req)) return NextResponse.next();
 
   await auth.protect();
 });

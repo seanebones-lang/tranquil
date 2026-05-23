@@ -99,7 +99,9 @@ There is **no** valid workspace-level `railway.json` checked in anymore (Railway
 
 - [ ] Create/configure **`web`** to match **build → full Next build**, **start → `npm start`** (runs **`.next/standalone/start-production.mjs`** copied at build — do **not** use bare `node .next/standalone/server.js` alone or you skip migrations unless you intentionally changed that).
 
-- **Web only (recommended):** **Settings → Deploy → Health check path** = **`/railway-health.json`** so health checks do not hit **`/`** (Clerk / app code). A yellow warning on **`web`** with “Completed” is often a **failed health check** on `/`.
+- **Web only:** **Settings → Deploy → Health check path** should **not** be **`/`** (Clerk and app redirects confuse naive probes).
+  - Prefer **`/api/health`** (returns **`{"ok":true,…}`** and skips auth noise). **`/railway-health.json`** is a static fallback and is fine too.
+  - If the **Deployments** tab shows **`FAILED`** but **`railway logs -s web --http`** shows steady **200**s on real routes (and **`curl https://…/api/health`** is **200**), treat that as **a bad rollout artifact** (prior successful deployment may still be taking traffic—confirm in the dashboard which deployment is “active” before the next redeploy strands you).
 - [ ] Create/configure **`worker`** to match **`npm ci`**, **start → `npm run worker`**.
 - [ ] Point both at **same repo / same branch** (`main`).
 - [ ] Generate a public domain for **`web`** (Networking) — copy the **`https://…up.railway.app`** canonical URL **without trailing slash**.
