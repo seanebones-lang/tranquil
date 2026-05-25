@@ -1,8 +1,7 @@
 // A Tranquil Space — database schema
 //
-// Includes Auth.js v5 required models (User, Account, Session, VerificationToken)
-// plus the application data model (notes, citations, related notes, chat threads,
-// daily reflections, audit log).
+// Clerk-backed User model + application data (notes, citations, related notes, chat threads,
+// daily reflections, audit log, heirloom access).
 
 generator client {
   provider = "prisma-client-js"
