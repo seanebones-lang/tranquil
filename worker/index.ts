@@ -10,11 +10,26 @@
  * Start in prod: pnpm worker
  */
 import "dotenv/config";
+import * as http from "http";
 import { Worker } from "bullmq";
 import { redisConnection, QUEUES } from "../src/lib/queue";
 import { transcribeProcessor } from "./jobs/transcribe";
 import { organizeProcessor } from "./jobs/organize";
 import { embedProcessor } from "./jobs/embed";
+
+const healthPort = parseInt(process.env.HEALTH_PORT || process.env.PORT || "3001", 10);
+const server = http.createServer((req, res) => {
+  if (req.url === "/health" || req.url === "/") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok", service: "worker" }));
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+});
+server.listen(healthPort, () => {
+  console.log(`Health check server listening on port ${healthPort}`);
+});
 
 const workers = [
   new Worker(QUEUES.transcribe, transcribeProcessor, {
