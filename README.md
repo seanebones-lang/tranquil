@@ -172,7 +172,12 @@ Copy **[`.env.example`](./.env.example)** to `.env`. Summary:
 | `DATABASE_URL` | App | Postgres connection string |
 | `AUTH_RESEND_KEY` | Weekly digest / transactional mail | Resend API key (`src/lib/email.ts`) |
 | `EMAIL_FROM` | Outbound mail | Dev: `onboarding@resend.dev`; prod: verified domain |
-| `XAI_API_KEY` | AI / Collections | console.x.ai |
+| `XAI_API_KEY` | AI / Collections | console.x.ai — still required for **Grok Collections RAG** and **voice transcription** |
+| `AI_PROVIDER` | LLM chat / research / organize | `openai` (default), `anthropic`, or `xai`. Any OpenAI-compatible API works |
+| `AI_API_KEY` | LLM chat / research / organize | Provider-agnostic key; replaces the hard xAI dependency for text features |
+| `AI_BASE_URL` | LLM | Optional — point at OpenRouter, NVIDIA NIM, DeepSeek, Groq, Ollama, etc. |
+| `AI_CHAT_MODEL` / `AI_CHEAP_MODEL` | LLM | Optional — override the per-provider default models |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | LLM | Optional native keys (used when `AI_API_KEY` unset) |
 | `QURAN_COLLECTION_ID` etc. | Research / slash / agent | After Phase 0 seeds |
 | `R2_*` | Audio / uploads | Cloudflare R2 |
 | `REDIS_URL` | Worker / BullMQ | Railway or local Redis |
@@ -180,6 +185,48 @@ Copy **[`.env.example`](./.env.example)** to `.env`. Summary:
 | `CRON_SECRET` | Cron routes | Bearer token for `/api/cron/*` |
 
 Seeds use a separate **[`seeds/.env.example`](./seeds/.env.example)** — keep upload keys scoped.
+
+### Bring your own AI provider
+
+Text AI (chat, research summarization, and note organization) is **provider-agnostic** and
+accepts any API key. Everything routes through `src/lib/xai.ts` (keep the filename — it is the
+single integration seam) via the Vercel AI SDK:
+
+- **OpenAI-compatible** (default) — OpenAI, DeepSeek, NVIDIA NIM, Groq, Together, Mistral,
+  OpenRouter, xAI, Ollama, LM Studio, or any gateway speaking the `/chat/completions` protocol.
+- **Anthropic** — Claude's native Messages API.
+
+**Minimal setup** — just paste any OpenAI-compatible key:
+
+```bash
+AI_API_KEY=sk-…            # works for OpenAI / OpenRouter / DeepSeek / Groq / etc.
+AI_BASE_URL=https://api.openrouter.ai/api/v1   # optional; omit for real OpenAI
+AI_CHAT_MODEL=meta-llama/llama-3.3-70b-instruct   # optional
+```
+
+Or target Claude:
+
+```bash
+AI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-…
+AI_CHAT_MODEL=claude-sonnet-4-5  # optional
+```
+
+Or keep it on Grok (backward-compatible with the old setup — just `XAI_API_KEY`):
+
+```bash
+XAI_API_KEY=xai-…
+```
+
+Resolution order for the key: provider-native key (`OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `XAI_API_KEY`) →
+`AI_API_KEY` → legacy `XAI_API_KEY`. Default models are chosen per provider and can be overridden with
+`AI_CHAT_MODEL` / `AI_CHEAP_MODEL` / `AI_EMBEDDING_MODEL` / `AI_STT_MODEL`.
+
+**Scope note:** the two Grok-only surfaces still need xAI — the Islamic RAG built on **Grok
+Collections** (`src/lib/collections.ts`, `src/lib/islamic.ts`) and **voice transcription**
+(`src/lib/stt.ts`). On a non-xAI deployment those degrade gracefully (Research shows a
+"not configured" notice), while chat, research summarization, and note organization work
+against whatever provider you configure.
 
 ---
 

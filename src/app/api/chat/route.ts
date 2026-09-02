@@ -7,8 +7,7 @@ import {
   stepCountIs,
   type UIMessage,
 } from "ai";
-import { xai } from "@ai-sdk/xai";
-import { MODELS } from "@/lib/xai";
+import { chatModel } from "@/lib/xai";
 import { buildToolsForUser } from "@/lib/agent-tools";
 
 export const runtime = "nodejs";
@@ -109,21 +108,12 @@ export async function POST(req: Request) {
   }
 
   const result = streamText({
-    model: xai(MODELS.chat),
+    model: chatModel(),
     system: SYSTEM_PROMPT,
     messages: convertToModelMessages(messages),
     tools: buildToolsForUser(userId),
     // Allow multi-tool reasoning: call tools, get results, then summarize
     stopWhen: stepCountIs(5),
-    // xAI native web search — Grok handles this server-side
-    providerOptions: {
-      xai: {
-        searchParameters: {
-          mode: "auto",
-          returnCitations: true,
-        },
-      },
-    },
     temperature: 0.3,
 
     onFinish: async ({ text, toolCalls, sources }) => {

@@ -1,9 +1,8 @@
 import type { Job } from "bullmq";
 import { generateObject } from "ai";
-import { xai } from "@ai-sdk/xai";
 import { z } from "zod";
 import { prisma } from "../../src/lib/db";
-import { MODELS } from "../../src/lib/xai";
+import { cheapModel } from "../../src/lib/xai";
 import { getEmbedQueue, QUEUES, type OrganizeJob } from "../../src/lib/queue";
 
 const OrganizedNoteSchema = z.object({
@@ -70,7 +69,7 @@ export async function organizeProcessor(job: Job<OrganizeJob>) {
   let parsed;
   try {
     const result = await generateObject({
-      model: xai(MODELS.cheap),
+      model: cheapModel(),
       schema: OrganizedNoteSchema,
       system: SYSTEM_PROMPT,
       prompt: `Note to organize:\n\n"""${note.bodyMd.slice(0, 8000)}"""`,

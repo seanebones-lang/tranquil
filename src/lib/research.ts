@@ -1,7 +1,6 @@
 import { generateObject } from "ai";
-import { xai } from "@ai-sdk/xai";
 import { z } from "zod";
-import { MODELS } from "./xai";
+import { chatModel } from "./xai";
 import {
   searchQuran,
   searchHadith,
@@ -158,7 +157,7 @@ async function composeAnswer(
   system: string,
 ): Promise<{ prose: string; citation_ids: string[] }> {
   const { object } = await generateObject({
-    model: xai(MODELS.chat),
+    model: chatModel(),
     schema: AnswerSchema,
     system,
     prompt:
