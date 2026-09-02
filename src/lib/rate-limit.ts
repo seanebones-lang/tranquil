@@ -16,6 +16,8 @@ function getRateLimiterRedis(): RateLimiterRedis {
     redisUrl && redisUrl.length > 0
       ? new IORedis(redisUrl, {
           maxRetriesPerRequest: null,
+          connectTimeout: 1500,
+          enableOfflineQueue: false,
           retryStrategy(times) {
             return Math.min(times * 250, 5_000);
           },
@@ -23,7 +25,11 @@ function getRateLimiterRedis(): RateLimiterRedis {
       : new IORedis({
           host: "localhost",
           port: 6379,
-          maxRetriesPerRequest: null,
+          connectTimeout: 1500,
+          enableOfflineQueue: false,
+          retryStrategy(times) {
+            return Math.min(times * 250, 5_000);
+          },
         });
 
   redisClient.on("error", (err) => {

@@ -8,8 +8,11 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+const clerk = clerkMiddleware(async (auth, req) => {
   const { pathname, searchParams } = req.nextUrl;
+
+  // Dev bypass: skip protection entirely (no Clerk session required).
+  if (process.env.LOCAL_DEV_NO_AUTH === "1") return NextResponse.next();
 
   if (pathname === "/api/health" || pathname.startsWith("/api/health/"))
     return NextResponse.next();
@@ -23,6 +26,8 @@ export default clerkMiddleware(async (auth, req) => {
 
   await auth.protect();
 });
+
+export default clerk;
 
 export const config = {
   matcher: [

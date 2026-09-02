@@ -8,6 +8,13 @@ import { auth as clerkAuth, currentUser } from "@clerk/nextjs/server";
 import type { User } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
+/** Dev-only auth bypass: when set, every request is treated as this local user
+ *  without Clerk. Never enable in production. */
+const DEV_USER_EMAIL = "dev@local.test";
+function isAuthBypass(): boolean {
+  return process.env.LOCAL_DEV_NO_AUTH === "1";
+}
+
 /** Avoid duplicate Clerk signups racing on the same inbox, or casing drift vs Postgres. */
 function isPrismaUniqueConstraint(e: unknown): boolean {
   return (
@@ -39,6 +46,17 @@ function clerkFallbackEmail(clerkUserId: string): string {
 export async function auth(): Promise<{
   user: { id: string; name: string | null; email: string };
 } | null> {
+  // Dev bypass: skip Clerk entirely and return (or create) a local dev user.
+  if (isAuthBypass()) {
+    let user = await findUserByEmailLoose(DEV_USER_EMAIL);
+    if (!user) {
+      user = await prisma.user.create({
+        data: { email: DEV_USER_EMAIL, name: "Local Dev" },
+      });
+    }
+    return { user: { id: user.id, name: user.name, email: user.email } };
+  }
+
   const { userId } = await clerkAuth();
   if (!userId) return null;
 
